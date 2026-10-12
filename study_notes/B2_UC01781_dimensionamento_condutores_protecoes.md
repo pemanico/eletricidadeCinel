@@ -1,3 +1,5 @@
+> **ERRATA (2026-10-12):** nesta nota, a 'correção' do exemplo do termoacumulador usou capacidades de corrente da tabela IEC 60364-5-52:2009 (método B1: 4 mm² = 28 A). O **RTIEBT, Quadro 52-C1, método B** (tubo embebido em alvenaria), dá **32 A para 4 mm²**. Com os fatores k1 = 0,94 e k2 = 0,70, Iz = 21,06 A ≥ In = 20 A: **4 mm² cumpre sob o RTIEBT** (3G4 + C20 + DDR 30 mA). A tabela a usar em Portugal é a do RTIEBT. Todos os valores de capacidade de corrente desta nota são IEC 2009 B1, não RTIEBT, e por rever. Ver `src/eletro/calc/cabos.py` e `docs/REGRAS_HABITACAO_RTIEBT.md`.
+
 # UC01781 - Dimensionar condutores, proteções e circuitos de instalações de energia elétrica
 
 > Material de estudo (explicação + exemplos). **Não é fonte normativa.** Os valores de tabelas (capacidades de corrente, fatores de correção, limites de queda de tensão, secções mínimas) são valores de referência da IEC 60364-5-52 e podem diferir da versão em vigor do RTIEBT. Confirma sempre na norma/RTIEBT antes de usar em obra.

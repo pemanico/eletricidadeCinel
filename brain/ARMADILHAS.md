@@ -1,6 +1,8 @@
 # Armadilhas conhecidas
 ## Erros de conteúdo já cometidos
-- 4 mm² B1 PVC 2 condutores: 28 A (não 32 A). Termoacumulador 4,6 kW/25 m/35 °C/3 circuitos: 4 mm² dá Iz 18,4 A, falha; 6 mm² dá 23,7 A, cumpre (3G6 + C20 + DDR 30 mA).
+- **(2026-10-12, grave)** Fiz uma "correção" errada: 4 mm² B1 = 28 A é IEC 60364-5-52:2009; o RTIEBT (Quadro 52-C1, método B) dá 32 A. Sob RTIEBT o termoacumulador 4,6 kW/25 m/35 °C/3 circuitos fica em 4 mm² (Iz 21,06 A), não 6 mm². As notas de estudo B2 têm errata no topo; as restantes tabelas das notas (IEC 2009) estão por rever. Lição: tabela só do texto normativo, com artigo citado.
+- O PDF consolidado do DR não traz o texto das tabelas ("ver documento original", 193 vezes); a anotada é a Edição de 2000.
+- (SUPERADO pela entrada acima) a "correção" 4→6 mm² estava errada para o RTIEBT.
 - Resistências em paralelo e outros exercícios do bloco 1 foram corrigidos; as notas continuam a ser material de estudo por validar.
 ## Ambiente (sessão em contentor na nuvem)
 - `pip` não chega ao PyPI (sem ezdxf, sem pytest): usar `python run_tests.py` e o escritor DXF próprio.
