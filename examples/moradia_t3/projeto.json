@@ -1,7 +1,12 @@
 {"name":"Moradia T3 (exemplo)","location":"Lisboa","supply":{"phases":1,"contracted_kva":10.35},
+ "revision":1,"revisions":[{"number":1,"date":"2026-10-12","author":"ordep","reason":"versao inicial"}],
  "rooms":[
- {"id":"r1","name":"Sala","use":"sala","area_m2":24.0,"confirmed":true},
- {"id":"r2","name":"Cozinha","use":"cozinha","area_m2":10.5,"confirmed":true},
- {"id":"r3","name":"Quarto 1","use":"quarto","area_m2":14.0,"confirmed":true},
- {"id":"r4","name":"Quarto 2","use":"quarto","area_m2":11.0,"confirmed":true},
- {"id":"r5","name":"WC","use":"wc","area_m2":4.5,"confirmed":true}]}
+ {"id":"r1","name":"Sala","use":"sala","polygon":[[0,0],[6,0],[6,4],[0,4]],"confirmed":true},
+ {"id":"r2","name":"Cozinha","use":"cozinha","polygon":[[6,0],[9.5,0],[9.5,3],[6,3]],"confirmed":true},
+ {"id":"r3","name":"Quarto 1","use":"quarto","polygon":[[0,4],[4,4],[4,7.5],[0,7.5]],"confirmed":true},
+ {"id":"r4","name":"Quarto 2","use":"quarto","polygon":[[4,4],[7,4],[7,7.5],[4,7.5]],"confirmed":true},
+ {"id":"r5","name":"WC","use":"wc","polygon":[[7,4],[9.5,4],[9.5,6],[7,6]],"confirmed":false}],
+ "openings":[{"id":"p1","kind":"porta","room_id":"r1","pos":[3,0],"width_m":0.9},
+             {"id":"j1","kind":"janela","room_id":"r1","pos":[1.5,4],"width_m":1.5}],
+ "equipment":[{"id":"e1","kind":"termoacumulador","room_id":"r5","power_w":4600}],
+ "panel":{"room_id":"r1","pos":[0.3,0.5]}}

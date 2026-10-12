@@ -10,4 +10,4 @@ entrada (JSON | DXF | PDF vetorial | foto) → `Project` (schema) → regras + c
 1. JSON manual (já) 2. DXF (converter DWG→DXF) 3. PDF vetorial (extração + confirmação) 4. Fotos só para contexto qualitativo, nunca para cotas.
 
 ## Estado
-Ver ROADMAP.md. Executar testes: `PYTHONPATH=src python -m pytest tests/golden` (ou pytest com pythonpath).
+Ver ROADMAP.md e docs/PLANO_PROJETO.md. Testes: `python run_tests.py`. CLI: `PYTHONPATH=src python -m eletro.cli validate|draw|diff`. Agentes: docs/AGENTES.md.
