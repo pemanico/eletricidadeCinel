@@ -1,5 +1,5 @@
 # Estado atual
-_Atualizado: 2026-10-12 20:55 (antes do início do curso, que começa 19-10-2026)_
+_Atualizado: 2026-10-12 (fim do dia; curso começa 19-10-2026)_
 
 ## Feito
 - Notas de estudo em 9 blocos cobrindo todas as UC + UFPRA/UFPCT (`study_notes/`). Material de estudo gerado por IA, NÃO normativo.
@@ -19,7 +19,20 @@ Feito: `python -m eletro.cli calc examples/moradia_t3/projeto.json` calcula pont
 **Ainda NÃO existe:** verificação de disparo magnético/Icc mínima/I²t (faltam Zs e Icc), seleção por selectividade, terras e equipotencial (elétrodo, ligações), esquema unifilar gráfico, quadro de cargas em DXF/PDF, tomadas em WC (volumes 701), ATI/tubagem ITED, mapa de quantidades, orçamento, trifásico, app web.
 Limitações conhecidas: agrupamento sequencial pela ordem das divisões (iluminação percorre a casa toda numa ordem arbitrária); WC com circuito de tomadas próprio; tabelas da edição 2000 por confirmar.
 
-## Próximo passo (por ordem)
+## APP WEB v1 (2026-10-12, última fase)
+Arrancar: `PYTHONPATH=src python -m eletro.web.server 8765` → http://127.0.0.1:8765 (só localhost; dados em `projetos/<slug>/`, **ignorado pelo Git**: fazer cópia à parte).
+Separadores: Divisões, Equipamentos, Alimentação/quadro (posicionar quadro clicando na planta; comprimentos manuais), Convenção (JSON editável, guardado por projeto), Resultado, Planta+circuitos (SVG), Unifilar (SVG), Material, Revisões (diff, carregar revisão antiga), DXF do arquiteto, Exportar (relatório HTML, DXF planta, DXF unifilar, JSON).
+Código: `web/service.py` (lógica), `web/server.py` (HTTP stdlib), `web/relatorio.py`, `web/static/{index.html,app.js}`, `calc/material.py`, `cad/desenho.py`, `cad/dxfread.py`. 42 testes. Verificado com Chromium (Playwright): criar exemplo, editar, nova revisão, diff, importar DXF sintético.
+**Limitações conhecidas (honestas):**
+- DXF do arquiteto só testado com um DXF SINTÉTICO (`tests/golden/arq_dxf.py`). Falta testar com um ficheiro real: pedir ao Ordep um DXF ASCII de uma planta real. DWG/DXF binário não são lidos.
+- DXF exportado: reescreve linhas/polilinhas do arquiteto (camadas ARQ-*) + camadas elétricas; NÃO reproduz textos, blocos, hatches nem arcos do arquiteto; não testado em AutoCAD.
+- Importar DXF numera as divisões r1..rN pela ordem do ficheiro e substitui as atuais: equipamentos ligados a ids antigos podem ficar na divisão errada → rever após importar.
+- Posições de pontos e trajetos na planta são INDICATIVAS (estrela a partir do ponto central); legenda e etiquetas junto ao quadro sobrepõem-se.
+- Material: quantidades sem preços; tubagem, caixas, ATI/ITED, bornes não dimensionados.
+- Sem autenticação (é local). Não expor à rede.
+**Próximo:** (1) DXF real do arquiteto; (2) agentes (conforme pedido: depois da app); (3) orçamento (preços); (4) trajetos de cabo por paredes/teto em vez de estrela; (5) Icc/Zs e verificação magnética.
+
+## Próximo passo (histórico, ver acima)
 1. (feito) DXF validado visualmente pelo Ordep. Melhorar portas/janelas (abertura na parede em vez de linha sobreposta) e acrescentar pontos elétricos como dados (regenerar com `PYTHONPATH=src python -m eletro.cli draw examples/moradia_t3/projeto.json -o saida/t3_rev1.dxf`) e reportar o que falha.
 2. Leitor de DXF para a ingestão (planta existente → Project, `confirmed=false`).
 3. Motor de orçamento (tabela de preços, margem sobre preço, IVA, mão de obra), com o exemplo 1823,35 → 2990,29 € como teste. Só depois disso, app web.
@@ -29,4 +42,4 @@ Limitações conhecidas: agrupamento sequencial pela ordem das divisões (ilumin
 Motor de regras+cálculo (YAML com fonte/estado) → app web de edição/recálculo/diff → orçamento. Aguarda OK do Ordep às regras A VALIDAR.
 
 ## Não fazer ainda
-App web, agentes de memória descritiva, FV/VE, trifásico. Ver [[DECISOES]].
+Agentes de memória descritiva, FV/VE, trifásico. Ver [[DECISOES]].
