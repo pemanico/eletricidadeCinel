@@ -8,7 +8,7 @@
 - [ ] RGPD: guardar dados de clientes e preços de fornecedores (repo é privado, mas isso não basta).
 ## Técnico
 - [ ] Obter o texto/imagens das tabelas do RTIEBT 2006/2015 (DR original ou DGEG): secções mínimas 801.5.8, Quadros 52-C, 52-D, 52-E, 52H. Até lá, valores da edição de 2000, POR CONFIRMAR.
-- [ ] Fonte para nº de tomadas/pontos de luz por divisão (RTIEBT não o diz). Decisão do Ordep: guia técnico DGEG/CERTIEL, ou convenção própria editável.
+- [ ] Fonte para nº de tomadas/pontos de luz por divisão. Pesquisa 2026-10-12: RTIEBT não o diz; nenhum documento normativo português encontrado (só blogs/imobiliárias). Perguntar ao formador da UC04673 / CINEL que referência usam. Entretanto: perfil de dotação editável, rotulado 'convenção, não normativa'. ITED tem mínimos próprios (ANACOM: 2 RJ45 + 1 TV na sala e na cozinha, a confirmar no Manual ITED).
 - [ ] Confirmar o Ordep a lista de regras em `docs/REGRAS_HABITACAO_RTIEBT.md` antes de codificar.
 - [ ] Ordep carregou no NotebookLM: Portaria 949-A/2006 consolidada (DR) e "RTIEBT anotada" (slideshare, ~dez/2013, comentário de terceiros, pode estar desatualizada). Falta pô-los em `sources/normativas/` (ou anexar no chat) para eu extrair regras com artigo citado.
 - [ ] Confirmar data da consolidação e alterações posteriores (ex.: Portaria 252/2015 apareceu nas pesquisas; ver relação).
