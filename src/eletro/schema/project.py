@@ -76,6 +76,11 @@ class Override(BaseModel):
     base: object = None
     reason: str = ""
 
+class BaseDxf(BaseModel):
+    """DXF do arquiteto usado como base. Coordenadas do Project = coordenadas DXF x unit_m (metros por unidade)."""
+    file: str
+    unit_m: float = Field(gt=0)
+
 class Project(BaseModel):
     name: str
     location: str = ""
@@ -87,6 +92,7 @@ class Project(BaseModel):
     revision: int = 0
     revisions: list[Revision] = []
     overrides: list[Override] = []
+    base: Optional[BaseDxf] = None
     circuit_length_m: dict[str, float] = {}   # correcao manual do comprimento por circuito (ex.: "TOM-1": 18.5)
 
     @model_validator(mode="after")
