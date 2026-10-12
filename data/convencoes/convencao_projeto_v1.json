@@ -3,27 +3,101 @@
   "estatuto": "CONVENCAO_DE_PROJETO_NAO_NORMATIVA",
   "nota": "Dotacao de pontos por divisao escolhida pelo autor do sistema (Claude) a pedido do Ordep, em 2026-10-12. O RTIEBT nao fixa numero minimo de tomadas/pontos por divisao. Editar livremente; o relatorio identifica sempre estes valores como convencao. Excluidas as tomadas de telecomunicacoes (ITED).",
   "dotacao": {
-    "sala":       {"luz_divisor_m2": 12, "luz_min": 2, "tom_divisor_m2": 4,   "tom_min": 6},
-    "cozinha":    {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 3,   "tom_min": 6},
-    "quarto":     {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 5,   "tom_min": 4},
-    "wc":         {"luz_divisor_m2": 10, "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
-    "hall":       {"luz_divisor_m2": 8,  "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
-    "corredor":   {"luz_divisor_m2": 6,  "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
-    "arrumos":    {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
-    "garagem":    {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 15,  "tom_min": 2},
-    "varanda":    {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
-    "escritorio": {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 3,   "tom_min": 6},
-    "lavandaria": {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 3,   "tom_min": 3},
-    "outro":      {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 6,   "tom_min": 2}
+    "sala": {
+      "luz_divisor_m2": 12,
+      "luz_min": 2,
+      "tom_divisor_m2": 4,
+      "tom_min": 6
+    },
+    "cozinha": {
+      "luz_divisor_m2": 12,
+      "luz_min": 1,
+      "tom_divisor_m2": 3,
+      "tom_min": 6
+    },
+    "quarto": {
+      "luz_divisor_m2": 15,
+      "luz_min": 1,
+      "tom_divisor_m2": 5,
+      "tom_min": 4
+    },
+    "wc": {
+      "luz_divisor_m2": 10,
+      "luz_min": 1,
+      "tom_divisor_m2": 100,
+      "tom_min": 1
+    },
+    "hall": {
+      "luz_divisor_m2": 8,
+      "luz_min": 1,
+      "tom_divisor_m2": 100,
+      "tom_min": 1
+    },
+    "corredor": {
+      "luz_divisor_m2": 6,
+      "luz_min": 1,
+      "tom_divisor_m2": 100,
+      "tom_min": 1
+    },
+    "arrumos": {
+      "luz_divisor_m2": 15,
+      "luz_min": 1,
+      "tom_divisor_m2": 100,
+      "tom_min": 1
+    },
+    "garagem": {
+      "luz_divisor_m2": 15,
+      "luz_min": 1,
+      "tom_divisor_m2": 15,
+      "tom_min": 2
+    },
+    "varanda": {
+      "luz_divisor_m2": 15,
+      "luz_min": 1,
+      "tom_divisor_m2": 100,
+      "tom_min": 1
+    },
+    "escritorio": {
+      "luz_divisor_m2": 12,
+      "luz_min": 1,
+      "tom_divisor_m2": 3,
+      "tom_min": 6
+    },
+    "lavandaria": {
+      "luz_divisor_m2": 12,
+      "luz_min": 1,
+      "tom_divisor_m2": 3,
+      "tom_min": 3
+    },
+    "outro": {
+      "luz_divisor_m2": 12,
+      "luz_min": 1,
+      "tom_divisor_m2": 6,
+      "tom_min": 2
+    }
   },
   "interruptores_por_pontos_de_luz": 3,
   "circuitos": {
     "max_pontos_por_circuito": 8,
     "max_pontos_fonte": "RTIEBT 801.5.3",
     "max_aparelhos_climatizacao_por_circuito": 5,
-    "iluminacao": {"in_a": 10, "w_por_ponto": 60},
-    "tomadas": {"in_a": 16},
-    "s_min_mm2": {"iluminacao": 1.5, "tomadas": 2.5, "termoacumulador": 2.5, "maq_lavar": 2.5, "forno": 4, "placa": 4, "avac": 2.5, "outro": 2.5},
+    "iluminacao": {
+      "in_a": 10,
+      "w_por_ponto": 60
+    },
+    "tomadas": {
+      "in_a": 16
+    },
+    "s_min_mm2": {
+      "iluminacao": 1.5,
+      "tomadas": 2.5,
+      "termoacumulador": 2.5,
+      "maq_lavar": 2.5,
+      "forno": 4,
+      "placa": 4,
+      "avac": 2.5,
+      "outro": 2.5
+    },
     "s_min_fonte": "RTIEBT 801.5.8 (quadro em imagem no PDF consolidado; valores da edicao 2000) POR CONFIRMAR"
   },
   "condicoes_instalacao": {
@@ -32,9 +106,89 @@
     "n_circuitos_agrupados": 3,
     "nota": "Pressupostos de projeto (tubo embebido em alvenaria, 3 circuitos no mesmo trajeto). Editar por obra."
   },
-  "comprimentos": {"fator_trajeto": 1.2, "vertical_m": 3.0,
-    "nota": "ESTIMATIVA: distancia Manhattan quadro -> centro de cada divisao (por ordem das divisoes do circuito) x fator + descidas. Corrigir por circuito em Project.circuit_length_m."},
-  "queda_max_pct": {"iluminacao": 3, "outros": 5, "fonte": "RTIEBT 525, Quadro 52O, caso A (rede publica BT); edicao 2000, POR CONFIRMAR"},
-  "compartimentos_nao_contam": ["corredor", "hall", "varanda", "arrumos"],
-  "compartimentos_nota": "RTIEBT 801.5.2.2 usa 'numero de compartimentos' sem o definir nas partes lidas: esta lista e convencao."
+  "comprimentos": {
+    "fator_trajeto": 1.2,
+    "vertical_m": 3.0,
+    "nota": "ESTIMATIVA: distancia Manhattan quadro -> centro de cada divisao (por ordem das divisoes do circuito) x fator + descidas. Corrigir por circuito em Project.circuit_length_m."
+  },
+  "queda_max_pct": {
+    "iluminacao": 3,
+    "outros": 5,
+    "fonte": "RTIEBT 525, Quadro 52O, caso A (rede publica BT); edicao 2000, POR CONFIRMAR"
+  },
+  "compartimentos_nao_contam": [
+    "corredor",
+    "hall",
+    "varanda",
+    "arrumos"
+  ],
+  "compartimentos_nota": "RTIEBT 801.5.2.2 usa 'numero de compartimentos' sem o definir nas partes lidas: esta lista e convencao.",
+  "simultaneidade": {
+    "iluminacao": 1.0,
+    "tomadas": 0.25,
+    "tomada_circuito_w": 3680,
+    "equipamento": 1.0,
+    "climatizacao": 1.0,
+    "cos_phi": 1.0,
+    "nota": "CONVENCAO: o RTIEBT (801.1.1.1) nao fixa coeficientes de simultaneidade. Editar por obra."
+  },
+  "quadro": {
+    "curvas": {
+      "iluminacao": "B",
+      "tomadas": "C",
+      "outros": "C"
+    },
+    "poder_corte_assumido_ka": 6,
+    "ddr": {
+      "ina_mA": 30,
+      "tipo": "A",
+      "calibres_a": [
+        25,
+        40,
+        63,
+        80,
+        100
+      ],
+      "zonas_humidas": [
+        "cozinha",
+        "wc",
+        "lavandaria",
+        "varanda",
+        "garagem"
+      ]
+    },
+    "modulos": {
+      "por_mcb": 2,
+      "por_ddr": 2,
+      "por_geral": 2,
+      "reserva": 0.2,
+      "por_fileira": 12
+    },
+    "potencias_normalizadas_kva": {
+      "1": [
+        1.15,
+        2.3,
+        3.45,
+        4.6,
+        5.75,
+        6.9,
+        10.35,
+        13.8,
+        17.25,
+        20.7
+      ],
+      "3": [
+        6.9,
+        10.35,
+        13.8,
+        17.25,
+        20.7,
+        27.6,
+        34.5,
+        41.4
+      ]
+    },
+    "potencias_fonte": "Escaloes de potencia contratada (comercializacao/ERSE): POR CONFIRMAR; nao e RTIEBT.",
+    "nota": "CONVENCAO de projeto: curvas, poder de corte assumido, agrupamento de DDR, modulos e reserva. DDR com In >= calibre do disjuntor geral (protecao contra sobrecarga a montante)."
+  }
 }

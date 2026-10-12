@@ -59,6 +59,8 @@ class Panel(BaseModel):
 class Supply(BaseModel):
     phases: Literal[1, 3] = 1
     contracted_kva: Optional[float] = None
+    icc_ka: Optional[float] = None        # corrente de curto-circuito no ponto de ligacao (pedir a e-Redes)
+    r_terra_ohm: Optional[float] = None   # resistencia de terra medida
 
 class Revision(BaseModel):
     number: int

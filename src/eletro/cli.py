@@ -11,7 +11,7 @@ def main(argv=None):
     sp = ap.add_subparsers(dest="cmd", required=True)
     v = sp.add_parser("validate"); v.add_argument("projeto")
     d = sp.add_parser("draw"); d.add_argument("projeto"); d.add_argument("-o", "--out", required=True); d.add_argument("--piso", type=int, default=0)
-    c = sp.add_parser("calc"); c.add_argument("projeto"); c.add_argument("--perfil", default="data/convencoes/convencao_projeto_v1.json"); c.add_argument("-o", "--json")
+    c = sp.add_parser("calc"); c.add_argument("projeto"); c.add_argument("--perfil", default="data/convencoes/convencao_projeto_v1.json"); c.add_argument("--ited", default="data/convencoes/ited_dotacao_v1.json"); c.add_argument("-o", "--json")
     f = sp.add_parser("diff"); f.add_argument("antes"); f.add_argument("depois")
     a = ap.parse_args(argv)
     if a.cmd == "validate":
@@ -28,7 +28,8 @@ def main(argv=None):
         for x in c: print("CONFLITO:", x)
         return 1 if c else 0
     if a.cmd == "calc":
-        r = calcular(load(a.projeto), carregar_perfil(a.perfil))
+        from .rules.ited import carregar as carregar_ited
+        r = calcular(load(a.projeto), carregar_perfil(a.perfil), carregar_ited(a.ited))
         print(relatorio_texto(r))
         if a.json:
             open(a.json, "w", encoding="utf-8").write(r.model_dump_json(indent=2))

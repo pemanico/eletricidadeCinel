@@ -7,6 +7,9 @@
 - [ ] Cláusula de exclusividade no contrato de trabalho atual (atividade paralela).
 - [ ] RGPD: guardar dados de clientes e preços de fornecedores (repo é privado, mas isso não basta).
 ## Técnico
+- [ ] Ordep: pôr o Manual ITED (ANACOM, edição em vigor) em `sources/normativas/` para confirmar tomadas RJ45/TV por divisão (quartos e outras) e dimensionar ATI/tubagem. Sala+cozinha em open space: como contar?
+- [ ] Icc no ponto de ligação (e-Redes) e resistência de terra medida: campos `supply.icc_ka` e `supply.r_terra_ohm`.
+- [ ] Coeficientes de simultaneidade: confirmar com formador/UC04673 o que o CINEL usa (a convenção v1 é minha).
 - [ ] Obter o texto/imagens das tabelas do RTIEBT 2006/2015 (DR original ou DGEG): secções mínimas 801.5.8, Quadros 52-C, 52-D, 52-E, 52H. Até lá, valores da edição de 2000, POR CONFIRMAR.
 - [ ] Fonte para nº de tomadas/pontos de luz por divisão. Pesquisa 2026-10-12: RTIEBT não o diz; nenhum documento normativo português encontrado (só blogs/imobiliárias). Perguntar ao formador da UC04673 / CINEL que referência usam. Entretanto: perfil de dotação editável, rotulado 'convenção, não normativa'. ITED tem mínimos próprios (ANACOM: 2 RJ45 + 1 TV na sala e na cozinha, a confirmar no Manual ITED).
 - [ ] Confirmar o Ordep a lista de regras em `docs/REGRAS_HABITACAO_RTIEBT.md` antes de codificar.

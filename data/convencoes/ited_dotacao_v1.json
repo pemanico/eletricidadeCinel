@@ -1,0 +1,79 @@
+{
+  "id": "ited_dotacao_v1",
+  "estatuto": "MISTO: ver campo 'estado' por tipo de divisao",
+  "nota": "Tomadas de telecomunicacoes por divisao em habitacao. O Manual ITED (ANACOM) e a fonte normativa e NAO esta em sources/normativas: os valores abaixo precisam de ser confirmados nele. Divisao com duas funcoes (sala/cozinha em open space) nao modelada.",
+  "dotacao": {
+    "sala": {
+      "rj45": 2,
+      "tv": 1,
+      "estado": "POR_CONFIRMAR",
+      "fonte": "FAQ ANACOM 'na sala e na cozinha, 2 tomadas RJ45 e 1 tomada de televisao' (titulo da FAQ; confirmar no Manual ITED vigente)"
+    },
+    "cozinha": {
+      "rj45": 2,
+      "tv": 1,
+      "estado": "POR_CONFIRMAR",
+      "fonte": "FAQ ANACOM (idem)"
+    },
+    "quarto": {
+      "rj45": 1,
+      "tv": 1,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao do projeto; confirmar no Manual ITED (nao encontrei o texto)"
+    },
+    "escritorio": {
+      "rj45": 2,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao do projeto"
+    },
+    "wc": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao do projeto"
+    },
+    "hall": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    },
+    "corredor": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    },
+    "arrumos": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    },
+    "garagem": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    },
+    "varanda": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    },
+    "lavandaria": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    },
+    "outro": {
+      "rj45": 0,
+      "tv": 0,
+      "estado": "CONVENCAO",
+      "fonte": "Convencao"
+    }
+  }
+}

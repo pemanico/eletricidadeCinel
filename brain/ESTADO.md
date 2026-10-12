@@ -15,7 +15,8 @@ _Atualizado: 2026-10-12 20:55 (antes do início do curso, que começa 19-10-2026
 
 ## Motor v1 (2026-10-12 noite)
 Feito: `python -m eletro.cli calc examples/moradia_t3/projeto.json` calcula pontos, circuitos, secções, Iz, quedas de tensão, potência mínima, com estado e fonte por linha. 22 testes (valores calculados à mão).
-**Ainda NÃO existe no motor:** potência de cálculo/simultaneidade; verificação de curto-circuito (Icc, poder de corte, Icc mínima: falta dado da e-Redes); diferenciais e proteção contra contactos indiretos; terras e equipotencial; quadro de cargas e unifilar; tomadas em WC (volumes); mapa de quantidades; orçamento; app web.
+**Atualização (22:50):** o motor já tem potência de cálculo (convenção), potência a contratar, disjuntor geral, DDR 30 mA em 2 grupos, curvas, PE (Q.54F), módulos do quadro, quadro de cargas em texto e ITED por divisão. 31 testes.
+**Ainda NÃO existe:** verificação de disparo magnético/Icc mínima/I²t (faltam Zs e Icc), seleção por selectividade, terras e equipotencial (elétrodo, ligações), esquema unifilar gráfico, quadro de cargas em DXF/PDF, tomadas em WC (volumes 701), ATI/tubagem ITED, mapa de quantidades, orçamento, trifásico, app web.
 Limitações conhecidas: agrupamento sequencial pela ordem das divisões (iluminação percorre a casa toda numa ordem arbitrária); WC com circuito de tomadas próprio; tabelas da edição 2000 por confirmar.
 
 ## Próximo passo (por ordem)
