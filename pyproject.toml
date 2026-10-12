@@ -1,0 +1,11 @@
+[project]
+name = "eletro-agents"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2"]
+[project.optional-dependencies]
+dev = ["pytest"]
+dxf = ["ezdxf"]
+pdf = ["pdfplumber"]
+[tool.pytest.ini_options]
+pythonpath = ["src"]

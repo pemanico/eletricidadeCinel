@@ -1,0 +1,7 @@
+{"name":"Moradia T3 (exemplo)","location":"Lisboa","supply":{"phases":1,"contracted_kva":10.35},
+ "rooms":[
+ {"id":"r1","name":"Sala","use":"sala","area_m2":24.0,"confirmed":true},
+ {"id":"r2","name":"Cozinha","use":"cozinha","area_m2":10.5,"confirmed":true},
+ {"id":"r3","name":"Quarto 1","use":"quarto","area_m2":14.0,"confirmed":true},
+ {"id":"r4","name":"Quarto 2","use":"quarto","area_m2":11.0,"confirmed":true},
+ {"id":"r5","name":"WC","use":"wc","area_m2":4.5,"confirmed":true}]}
