@@ -19,6 +19,9 @@ Feito: `python -m eletro.cli calc examples/moradia_t3/projeto.json` calcula pont
 **Ainda NÃO existe:** verificação de disparo magnético/Icc mínima/I²t (faltam Zs e Icc), seleção por selectividade, terras e equipotencial (elétrodo, ligações), esquema unifilar gráfico, quadro de cargas em DXF/PDF, tomadas em WC (volumes 701), ATI/tubagem ITED, mapa de quantidades, orçamento, trifásico, app web.
 Limitações conhecidas: agrupamento sequencial pela ordem das divisões (iluminação percorre a casa toda numa ordem arbitrária); WC com circuito de tomadas próprio; tabelas da edição 2000 por confirmar.
 
+## Como retomar
+Novo chat: `/retomar` (ou ler brain/00_LEIA_PRIMEIRO.md + ESTADO.md). Última linha de trabalho: app web v1 concluída e no GitHub (commit 6627536+). Próximo: DXF real do arquiteto → agentes → orçamento.
+
 ## APP WEB v1 (2026-10-12, última fase)
 Arrancar: `PYTHONPATH=src python -m eletro.web.server 8765` → http://127.0.0.1:8765 (só localhost; dados em `projetos/<slug>/`, **ignorado pelo Git**: fazer cópia à parte).
 Separadores: Divisões, Equipamentos, Alimentação/quadro (posicionar quadro clicando na planta; comprimentos manuais), Convenção (JSON editável, guardado por projeto), Resultado, Planta+circuitos (SVG), Unifilar (SVG), Material, Revisões (diff, carregar revisão antiga), DXF do arquiteto, Exportar (relatório HTML, DXF planta, DXF unifilar, JSON).

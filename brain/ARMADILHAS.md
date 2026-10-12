@@ -13,3 +13,5 @@
 - Não confiar em texto de marketing do curso para direitos legais (assinar projetos).
 - Texto no DXF R12 sai sem acentos (ASCII).
 - Cada correção de números: verificar em Python antes de escrever em nota.
+- (2026-10-12) Ambiente: sem PyPI (sem ezdxf/FastAPI/pytest). Testes: `python run_tests.py`. Chromium+Playwright existem para verificar UI/SVG. `pkill -f` com parênteses no padrão rebenta; arrancar o servidor em background com porta fixa e matar por `pkill -f <porta>`.
+- (2026-10-12) Importar DXF renumera divisões r1..rN: equipamentos/quadro ligados a ids antigos podem ficar na divisão errada. Rever sempre após importar.
