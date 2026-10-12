@@ -1,3 +1,6 @@
+# Arranque de cada sessão
+Lê `brain/00_LEIA_PRIMEIRO.md` e `brain/ESTADO.md` (ou corre /retomar). No fim, corre /handoff.
+
 # Regras do repositório
 - Cálculos SEMPRE em src/eletro/calc (código). O LLM nunca calcula secções, quedas de tensão, Icc ou cargas.
 - Toda a regra normativa implementada em src/eletro/rules tem de citar fonte (diploma/artigo/norma + versão) em comentário.
