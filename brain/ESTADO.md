@@ -1,5 +1,5 @@
 # Estado atual
-_Atualizado: 2026-10-12 (antes do início do curso, que começa 19-10-2026)_
+_Atualizado: 2026-10-12 20:55 (antes do início do curso, que começa 19-10-2026)_
 
 ## Feito
 - Notas de estudo em 9 blocos cobrindo todas as UC + UFPRA/UFPCT (`study_notes/`). Material de estudo gerado por IA, NÃO normativo.
@@ -7,11 +7,11 @@ _Atualizado: 2026-10-12 (antes do início do curso, que começa 19-10-2026)_
 - 10 testes a passar (`python run_tests.py`).
 
 ## Em curso / não validado
-- DXF gerado só foi validado estruturalmente; **por abrir em QCAD/LibreCAD/AutoCAD**.
+- DXF gerado só foi validado estruturalmente; **por abrir em QCAD/LibreCAD/AutoCAD**. Ficheiro entregue ao Ordep e guardado em `examples/moradia_t3/t3_rev1.dxf` (a pasta `saida/` não vai para o Git). Aguarda feedback.
 - Tabelas de capacidade de corrente (calc/cabos.py) vêm das notas de estudo; **por validar na norma/RTIEBT**.
 
 ## Próximo passo (por ordem)
-1. Tu: abrir `saida/t3_rev1.dxf` (gerar com `PYTHONPATH=src python -m eletro.cli draw examples/moradia_t3/projeto.json -o saida/t3_rev1.dxf`) e reportar o que falha.
+1. Tu: abrir `examples/moradia_t3/t3_rev1.dxf` e reportar o que falha (regenerar com `PYTHONPATH=src python -m eletro.cli draw examples/moradia_t3/projeto.json -o saida/t3_rev1.dxf`) e reportar o que falha.
 2. Leitor de DXF para a ingestão (planta existente → Project, `confirmed=false`).
 3. Motor de orçamento (tabela de preços, margem sobre preço, IVA, mão de obra), com o exemplo 1823,35 → 2990,29 € como teste. Só depois disso, app web.
 4. Regras de pontos por divisão, quadro de cargas, unifilar: SÓ depois de dadas as UC e com fonte normativa citada.

@@ -7,6 +7,7 @@
 - `rsync` não existe: usar `cp -r`. Verificar sempre o resultado de uma cópia/commit (`git show --stat`).
 - Ficheiros com acentos no nome causam problemas: usar nomes ASCII.
 ## Processo
+- Entregar sempre os ficheiros que peço ao Ordep para abrir (SendUserFile) e guardá-los no repo se forem exemplos; `saida/` está no .gitignore e só existe no contentor.
 - Não confiar em texto de marketing do curso para direitos legais (assinar projetos).
 - Texto no DXF R12 sai sem acentos (ASCII).
 - Cada correção de números: verificar em Python antes de escrever em nota.

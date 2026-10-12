@@ -17,4 +17,5 @@ Contexto técnico: `README.md`, `ROADMAP.md`, `docs/PLANO_PROJETO.md`, `docs/AGE
 - Perfil técnico: engenharia de dados (PySpark, Oracle SQL, Node.js/TypeScript). Usa agentes e Claude Code.
 
 ## Regra de manutenção
+**Instrução permanente do Ordep: o Claude atualiza o cérebro sempre que for preciso, sem pedir autorização** (estado, decisões, dúvidas, progresso, armadilhas), com commit e push. O Ordep não tem de lembrar.
 No fim de cada sessão: atualizar [[ESTADO]] (e [[DECISOES]]/[[DUVIDAS_ABERTAS]] se mudaram), fazer commit. Comando: `/handoff`. No início: `/retomar`.

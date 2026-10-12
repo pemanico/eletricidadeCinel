@@ -11,3 +11,4 @@
 | D8 | 2026-10 | Saídas são RASCUNHOS não assinados até estar claro o que a carteira/exame permite. Dados de PDF/foto entram `confirmed=false`. | Habilitação para assinar projetos NÃO é automática. |
 | D9 | 2026-10 | Primeira versão com valor comercial: motor de orçamento, antes do gerador de projeto. App web só quando o motor existir. | Orçamento não depende de assinatura nem de UC de dimensionamento. |
 | D10 | 2026-10 | Cérebro = pasta `brain/` no repo (cofre Obsidian). Uma só fonte de verdade. | Evitar três cópias divergentes (memória, Project, repo). |
+| D11 | 2026-10-12 | O Claude mantém o cérebro atualizado por iniciativa própria, sem pedir autorização. | Instrução do Ordep: "sempre que precisares atualiza o cérebro". |
