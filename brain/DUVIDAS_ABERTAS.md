@@ -7,6 +7,8 @@
 - [ ] Cláusula de exclusividade no contrato de trabalho atual (atividade paralela).
 - [ ] RGPD: guardar dados de clientes e preços de fornecedores (repo é privado, mas isso não basta).
 ## Técnico
+- [ ] Ordep aceita regras A VALIDAR visíveis em todas as saídas até serem confirmadas? (D12)
+- [ ] Icc no ponto de ligação (e-Redes), resistividade do solo, método de instalação e temperatura: dados reais vs valores por defeito.
 - [ ] Calendário real do CINEL (ordem das UC).
 - [ ] Programa de CAD que o Ordep vai usar (DXF aberto em QCAD/LibreCAD/AutoCAD?).
 - [ ] Validar tabelas de cabos (IZ B1 PVC 2 condutores) na norma/RTIEBT.

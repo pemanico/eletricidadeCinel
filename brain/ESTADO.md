@@ -16,5 +16,8 @@ _Atualizado: 2026-10-12 20:55 (antes do início do curso, que começa 19-10-2026
 3. Motor de orçamento (tabela de preços, margem sobre preço, IVA, mão de obra), com o exemplo 1823,35 → 2990,29 € como teste. Só depois disso, app web.
 4. Regras de pontos por divisão, quadro de cargas, unifilar: SÓ depois de dadas as UC e com fonte normativa citada.
 
+## Visão acordada (D12)
+Motor de regras+cálculo (YAML com fonte/estado) → app web de edição/recálculo/diff → orçamento. Aguarda OK do Ordep às regras A VALIDAR.
+
 ## Não fazer ainda
 App web, agentes de memória descritiva, FV/VE, trifásico. Ver [[DECISOES]].
