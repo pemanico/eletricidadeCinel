@@ -85,6 +85,7 @@ class Project(BaseModel):
     revision: int = 0
     revisions: list[Revision] = []
     overrides: list[Override] = []
+    circuit_length_m: dict[str, float] = {}   # correcao manual do comprimento por circuito (ex.: "TOM-1": 18.5)
 
     @model_validator(mode="after")
     def _refs(self):

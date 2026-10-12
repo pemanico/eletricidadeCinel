@@ -1,0 +1,40 @@
+{
+  "id": "convencao_projeto_v1",
+  "estatuto": "CONVENCAO_DE_PROJETO_NAO_NORMATIVA",
+  "nota": "Dotacao de pontos por divisao escolhida pelo autor do sistema (Claude) a pedido do Ordep, em 2026-10-12. O RTIEBT nao fixa numero minimo de tomadas/pontos por divisao. Editar livremente; o relatorio identifica sempre estes valores como convencao. Excluidas as tomadas de telecomunicacoes (ITED).",
+  "dotacao": {
+    "sala":       {"luz_divisor_m2": 12, "luz_min": 2, "tom_divisor_m2": 4,   "tom_min": 6},
+    "cozinha":    {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 3,   "tom_min": 6},
+    "quarto":     {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 5,   "tom_min": 4},
+    "wc":         {"luz_divisor_m2": 10, "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
+    "hall":       {"luz_divisor_m2": 8,  "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
+    "corredor":   {"luz_divisor_m2": 6,  "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
+    "arrumos":    {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
+    "garagem":    {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 15,  "tom_min": 2},
+    "varanda":    {"luz_divisor_m2": 15, "luz_min": 1, "tom_divisor_m2": 100, "tom_min": 1},
+    "escritorio": {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 3,   "tom_min": 6},
+    "lavandaria": {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 3,   "tom_min": 3},
+    "outro":      {"luz_divisor_m2": 12, "luz_min": 1, "tom_divisor_m2": 6,   "tom_min": 2}
+  },
+  "interruptores_por_pontos_de_luz": 3,
+  "circuitos": {
+    "max_pontos_por_circuito": 8,
+    "max_pontos_fonte": "RTIEBT 801.5.3",
+    "max_aparelhos_climatizacao_por_circuito": 5,
+    "iluminacao": {"in_a": 10, "w_por_ponto": 60},
+    "tomadas": {"in_a": 16},
+    "s_min_mm2": {"iluminacao": 1.5, "tomadas": 2.5, "termoacumulador": 2.5, "maq_lavar": 2.5, "forno": 4, "placa": 4, "avac": 2.5, "outro": 2.5},
+    "s_min_fonte": "RTIEBT 801.5.8 (quadro em imagem no PDF consolidado; valores da edicao 2000) POR CONFIRMAR"
+  },
+  "condicoes_instalacao": {
+    "metodo": "B",
+    "temperatura_ambiente_c": 30,
+    "n_circuitos_agrupados": 3,
+    "nota": "Pressupostos de projeto (tubo embebido em alvenaria, 3 circuitos no mesmo trajeto). Editar por obra."
+  },
+  "comprimentos": {"fator_trajeto": 1.2, "vertical_m": 3.0,
+    "nota": "ESTIMATIVA: distancia Manhattan quadro -> centro de cada divisao (por ordem das divisoes do circuito) x fator + descidas. Corrigir por circuito em Project.circuit_length_m."},
+  "queda_max_pct": {"iluminacao": 3, "outros": 5, "fonte": "RTIEBT 525, Quadro 52O, caso A (rede publica BT); edicao 2000, POR CONFIRMAR"},
+  "compartimentos_nao_contam": ["corredor", "hall", "varanda", "arrumos"],
+  "compartimentos_nota": "RTIEBT 801.5.2.2 usa 'numero de compartimentos' sem o definir nas partes lidas: esta lista e convencao."
+}

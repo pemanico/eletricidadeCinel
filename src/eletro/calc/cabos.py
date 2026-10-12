@@ -50,3 +50,16 @@ def size_mono(p_w: float, length_m: float, k1: float = 1.0, k2: float = 1.0, cos
         if inn <= iz and d <= max_drop_pct:
             return {"ib": ib, "in": inn, "s_mm2": s, "iz": iz, "drop_pct": d, "metodo": metodo}
     raise ValueError("Nenhuma secao <=50 mm2 cumpre: rever metodo/comprimento")
+
+
+def size_for(ib: float, inn: float, length_m: float, k1: float = 1.0, k2: float = 1.0,
+             max_drop_pct: float = 3.0, metodo: str = "B", min_s_mm2: float = 1.5) -> dict:
+    """Menor secao com Ib<=In<=Iz e queda de tensao <= max, para uma corrente de projeto e calibre dados."""
+    for s, iz0 in IZ_PVC_CU_2[metodo].items():
+        if s < min_s_mm2:
+            continue
+        iz = iz0 * k1 * k2
+        d = drop_mono_pct(ib, length_m, s)
+        if ib <= inn <= iz and d <= max_drop_pct:
+            return {"ib": ib, "in": inn, "s_mm2": s, "iz": iz, "drop_pct": d, "metodo": metodo}
+    raise ValueError(f"Nenhuma secao <=50 mm2 cumpre (Ib={ib:.1f} A, In={inn} A, L={length_m:.1f} m)")
