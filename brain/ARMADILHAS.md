@@ -15,3 +15,7 @@
 - Cada correção de números: verificar em Python antes de escrever em nota.
 - (2026-10-12) Ambiente: sem PyPI (sem ezdxf/FastAPI/pytest). Testes: `python run_tests.py`. Chromium+Playwright existem para verificar UI/SVG. `pkill -f` com parênteses no padrão rebenta; arrancar o servidor em background com porta fixa e matar por `pkill -f <porta>`.
 - (2026-10-12) Importar DXF renumera divisões r1..rN: equipamentos/quadro ligados a ids antigos podem ficar na divisão errada. Rever sempre após importar.
+- (2026-10-13) **Acentos em DXF do arquiteto (risco, ainda não observado):** `app.js` lê o ficheiro com `File.text()` (sempre UTF-8) e o servidor descodifica UTF-8 com `errors="replace"`. Um DXF em ANSI_1252 perde "ç/ã/á" antes de chegar ao servidor (irrecuperável). Correção provável: enviar bytes e descodificar segundo `$DWGCODEPAGE`. Só mexer depois de ver o DXF real.
+- (2026-10-13) Windows: `mimetypes` lê o registo e pode dar `.js` = `text/plain`. No PC do Ordep deu `text/javascript` (OK). Se a página aparecer vazia noutra máquina, é a primeira suspeita.
+- (2026-10-13) Os botões "Novo"/"Exemplo T3" usam `prompt()`, que bloqueia o browser automatizado. Para testar, chamar `api("/api/projetos", {slug, exemplo:true}); listar(slug); abrir(slug)` pela consola JS.
+- (2026-10-13) Nuvem: um venv novo não chega ao PyPI (nem com o CA do proxy); o `python3` do sistema já tem pydantic 2.13 → correr os testes com ele.

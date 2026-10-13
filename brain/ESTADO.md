@@ -1,5 +1,5 @@
 # Estado atual
-_Atualizado: 2026-10-12 (fim do dia; curso começa 19-10-2026)_
+_Atualizado: 2026-10-13 (noite; curso começa 19-10-2026)_
 
 ## Feito
 - Notas de estudo em 9 blocos cobrindo todas as UC + UFPRA/UFPCT (`study_notes/`). Material de estudo gerado por IA, NÃO normativo.
@@ -24,6 +24,13 @@ Novo chat: `/retomar` (ou ler brain/00_LEIA_PRIMEIRO.md + ESTADO.md). Última li
 
 ## 2026-10-13
 README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO" no relatório, no texto e na app enquanto houver POR_CONFIRMAR/AVISO/NAO_CUMPRE. 43 testes. Revisão externa (Grok) aceite em parte; prioridade acordada: RTIEBT original + DXF real (do Ordep) → comparar com projeto real executado → orçamento (precisa de preços) → trajetos/agentes. Aviso: os golden tests usam as mesmas tabelas do código, não são validação independente.
+
+## 2026-10-13 (noite): app verificada no PC do Ordep (Windows)
+- Repo local do Ordep: `E:\Cinel\projectAI\eletricidadeCinel` (VS Code, Windows). O Ordep confirmou: testes OK e `python run_app.py` a correr.
+- Verificado por mim no browser da app Claude, ligado a http://127.0.0.1:8765 no PC dele: criado `moradia-t3` (Exemplo T3), calculado; Resultado, Planta+circuitos (SVG), Unifilar (SVG), Material e Exportar funcionam; banner "NÃO UTILIZÁVEL COMO PROJETO" presente (17 por confirmar, 4 avisos, 0 não cumpre); acentos corretos; consola sem erros; `app.js` servido como `text/javascript`.
+- DXF planta (14796 bytes) e unifilar (8998 bytes) exportados no Windows têm o mesmo tamanho que no Linux da nuvem. Relatório HTML com banner.
+- Nenhuma alteração de código nesta sessão (nada falhou no Windows).
+- **Próximo:** DXF real do arquiteto no separador "DXF do arquiteto" → relatar camadas/unidade/divisões antes de mexer em código. Risco já identificado: acentos em DXF ANSI_1252 (ver [[ARMADILHAS]]). Agentes e orçamento: não nesta fase.
 
 ## APP WEB v1 (2026-10-12, última fase)
 Arrancar: `python run_app.py` → http://127.0.0.1:8765 (só localhost; dados em `projetos/<slug>/`, **ignorado pelo Git**: fazer cópia à parte).

@@ -23,5 +23,5 @@
 - [ ] Validar tabelas de cabos (IZ B1 PVC 2 condutores) na norma/RTIEBT.
 - [ ] Tabela de preços real de fornecedores para o motor de orçamento.
 - [ ] Conteúdo mínimo legal das peças de um projeto (DGEG).
-- [ ] DXF real de uma planta de arquiteto (ASCII) para testar leitura/importação e a exportação; ver nomes de camadas e unidades reais.
+- [ ] DXF real de uma planta de arquiteto (ASCII) para testar leitura/importação e a exportação; ver nomes de camadas e unidades reais. Verificar também o `$DWGCODEPAGE` (AutoCAD PT costuma usar ANSI_1252): o upload lê como UTF-8 e pode estragar acentos (ver ARMADILHAS 2026-10-13).
 - [ ] `projetos/` está fora do Git: onde guardar cópias de segurança dos projetos do Ordep (repo privado separado?).
