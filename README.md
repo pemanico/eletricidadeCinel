@@ -17,7 +17,7 @@ planta (DXF / JSON / PDF / foto) → `Project` → regras + cálculo (`engine.ca
 ## Como correr
 ```
 python run_tests.py                                   # 43 testes (sem dependências externas)
-PYTHONPATH=src python -m eletro.web.server 8765       # app web em http://127.0.0.1:8765 (só localhost)
+python run_app.py                                     # app web em http://127.0.0.1:8765 (só localhost)
 PYTHONPATH=src python -m eletro.cli calc examples/moradia_t3/projeto.json
 ```
 Projetos da app ficam em `projetos/<slug>/` (**fora do Git**: fazer cópia à parte).

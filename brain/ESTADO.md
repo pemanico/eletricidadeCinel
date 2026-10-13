@@ -26,7 +26,7 @@ Novo chat: `/retomar` (ou ler brain/00_LEIA_PRIMEIRO.md + ESTADO.md). Última li
 README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO" no relatório, no texto e na app enquanto houver POR_CONFIRMAR/AVISO/NAO_CUMPRE. 43 testes. Revisão externa (Grok) aceite em parte; prioridade acordada: RTIEBT original + DXF real (do Ordep) → comparar com projeto real executado → orçamento (precisa de preços) → trajetos/agentes. Aviso: os golden tests usam as mesmas tabelas do código, não são validação independente.
 
 ## APP WEB v1 (2026-10-12, última fase)
-Arrancar: `PYTHONPATH=src python -m eletro.web.server 8765` → http://127.0.0.1:8765 (só localhost; dados em `projetos/<slug>/`, **ignorado pelo Git**: fazer cópia à parte).
+Arrancar: `python run_app.py` → http://127.0.0.1:8765 (só localhost; dados em `projetos/<slug>/`, **ignorado pelo Git**: fazer cópia à parte).
 Separadores: Divisões, Equipamentos, Alimentação/quadro (posicionar quadro clicando na planta; comprimentos manuais), Convenção (JSON editável, guardado por projeto), Resultado, Planta+circuitos (SVG), Unifilar (SVG), Material, Revisões (diff, carregar revisão antiga), DXF do arquiteto, Exportar (relatório HTML, DXF planta, DXF unifilar, JSON).
 Código: `web/service.py` (lógica), `web/server.py` (HTTP stdlib), `web/relatorio.py`, `web/static/{index.html,app.js}`, `calc/material.py`, `cad/desenho.py`, `cad/dxfread.py`. 42 testes. Verificado com Chromium (Playwright): criar exemplo, editar, nova revisão, diff, importar DXF sintético.
 **Limitações conhecidas (honestas):**
