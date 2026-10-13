@@ -19,3 +19,9 @@
 - (2026-10-13) Windows: `mimetypes` lê o registo e pode dar `.js` = `text/plain`. No PC do Ordep deu `text/javascript` (OK). Se a página aparecer vazia noutra máquina, é a primeira suspeita.
 - (2026-10-13) Os botões "Novo"/"Exemplo T3" usam `prompt()`, que bloqueia o browser automatizado. Para testar, chamar `api("/api/projetos", {slug, exemplo:true}); listar(slug); abrir(slug)` pela consola JS.
 - (2026-10-13) Nuvem: um venv novo não chega ao PyPI (nem com o CA do proxy); o `python3` do sistema já tem pydantic 2.13 → correr os testes com ele.
+- (2026-10-13) `pkill -f <porta>` mata o próprio shell se a porta aparecer na linha de comando corrente: arrancar o servidor de teste numa porta e NÃO correr pkill no mesmo comando.
+- (2026-10-13) pdfplumber é lento em plantas (interpreta toda a geometria só para tirar texto: 26 s para 23 págs.); para o texto de todas as páginas usar pypdfium2 (0,35 s). pdfplumber só na página escolhida.
+- (2026-10-13) Verificar a escala pelas cotas do PDF falhou: cadeias de cotas sobrepostas, marcas intermédias não desenhadas como linhas. A escala valida-se pelas ÁREAS contra o quadro do arquiteto.
+- (2026-10-13) Bugs meus apanhados pelos testes: traçado de contorno Moore errado (só 4 pixeis), Douglas-Peucker num contorno fechado colapsa (início = fim → linha de comprimento 0), amostragem do lado das portas ao longo da parede em vez de através. Sempre testar funções geométricas com formas conhecidas antes do caso real.
+- (2026-10-13) A camada de "vistas" mistura caixilharia com loiças, bancadas e roupeiros: usar só linhas no prolongamento de uma parede (paralelas, dentro da espessura); senão as divisões perdem 10–40% de área.
+- (2026-10-13) O PDF "regravado" (Creator=PDFium) perdeu as camadas; o plot direto do AutoCAD (Creator=AutoCAD LT) mantém-nas. Pedir sempre o plot direto.

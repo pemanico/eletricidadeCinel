@@ -7,9 +7,10 @@ from urllib.parse import urlparse, parse_qs
 from pydantic import ValidationError
 from .service import Servico, Erro
 from ..cad.dxfread import DxfError
+from ..cad.pdfread import PdfError
 
 STATIC = Path(__file__).parent / "static"
-MAX_BODY = 20 * 1024 * 1024
+MAX_BODY = 60 * 1024 * 1024    # PDFs do processo completo podem ter dezenas de MB
 
 def fazer_handler(sv: Servico):
     class H(BaseHTTPRequestHandler):
@@ -20,13 +21,15 @@ def fazer_handler(sv: Servico):
             for k, v in (extra or {}).items(): self.send_header(k, v)
             self.end_headers(); self.wfile.write(b)
         def _json(self, obj, code=200): self._send(code, json.dumps(obj, ensure_ascii=False))
-        def _body(self):
+        def _raw(self):
             n = int(self.headers.get("Content-Length") or 0)
             if n > MAX_BODY: raise Erro("pedido demasiado grande")
-            return self.rfile.read(n).decode("utf-8", errors="replace")
+            return self.rfile.read(n)
+        def _body(self):
+            return self._raw().decode("utf-8", errors="replace")
         def _tratar(self, fn):
             try: fn()
-            except (Erro, DxfError, ValueError) as e:
+            except (Erro, DxfError, PdfError, ValueError) as e:
                 msg = "dados invalidos: " + "; ".join(f"{'.'.join(map(str, x['loc']))}: {x['msg']}" for x in e.errors()[:5]) if isinstance(e, ValidationError) else str(e)
                 self._json({"erro": msg}, 400)
             except Exception as e:
@@ -54,7 +57,8 @@ def fazer_handler(sv: Servico):
 
         def _post(self):
             u = urlparse(self.path)
-            d = json.loads(self._body() or "{}") if not u.path.endswith("/dxf") else None
+            binario = u.path.endswith("/dxf") or u.path.endswith("/pdf")
+            d = json.loads(self._body() or "{}") if not binario else None
             if u.path == "/api/projetos": return self._json(sv.criar(d.get("slug", ""), bool(d.get("exemplo"))))
             m = re.fullmatch(r"/api/p/([^/]+)/(\w+)", u.path)
             if not m: return self._json({"erro": "nao encontrado"}, 404)
@@ -63,6 +67,10 @@ def fazer_handler(sv: Servico):
             if ac == "guardar": return self._json(sv.guardar(slug, d["project"], d.get("motivo", ""), d.get("autor", "")))
             if ac == "perfil": sv.guardar_perfil(slug, d["perfil"]); return self._json({"ok": True})
             if ac == "dxf": return self._json(sv.dxf_analisar(slug, self._body()))
+            if ac == "pdf": return self._json(sv.pdf_analisar(slug, self._raw()))
+            if ac in ("pdf_detetar", "pdf_importar"):
+                args = (slug, d["pagina"], d.get("camadas_paredes") or [], d.get("camadas_vaos") or [], d["escala"], d.get("piso"))
+                return self._json((sv.pdf_detetar if ac == "pdf_detetar" else sv.pdf_importar)(*args))
             if ac == "importar": return self._json(sv.dxf_importar(slug, d["camada"], float(d["unit_m"])))
             if ac == "export_dxf":
                 return self._send(200, sv.exportar_dxf(slug, d["project"], d.get("que", "planta")), "application/dxf",

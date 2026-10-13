@@ -1,5 +1,5 @@
 # Estado atual
-_Atualizado: 2026-10-13 (noite; curso começa 19-10-2026)_
+_Atualizado: 2026-10-13 (noite, ~23:40; curso começa 19-10-2026)_
 
 ## Feito
 - Notas de estudo em 9 blocos cobrindo todas as UC + UFPRA/UFPCT (`study_notes/`). Material de estudo gerado por IA, NÃO normativo.
@@ -35,6 +35,14 @@ README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO"
 - 3.º PDF (projeto de alterações em obra, 23 págs, AutoCAD LT 2023, camadas preservadas). **Pág. 5 = Planta do piso 0 PROPOSTO, 1:100, 03-2024 (LIC.04): o caso de referência.** Tem: `arq_corte` (paredes, 912 segm.), `arq_cotas` (cotas em camada própria → validar escala), nomes das divisões em texto, **quadro de áreas úteis (22 divisões: Hall 1 4.72, …, Sala 47.97, Piscina 28.00 m²)** → validação cruzada, posição do QE e siglas de equipamentos (PF, MO, MLR, MLL). Págs. 15–23 = vermelhos/amarelos; piso -1 só aparece em vermelhos/amarelos (pág. 17).
 - Decisão pendente do Ordep: (a) pedir ao arquiteto o PDF original/DWG; (b) contorno semi-automático com o PDF como fundo + escala 1:50 + snap a vértices de parede + nomes importados; (c) extração automática de divisões (cara: portas abrem os polígonos).
 - **Próximo:** DXF real do arquiteto no separador "DXF do arquiteto" → relatar camadas/unidade/divisões antes de mexer em código. Risco já identificado: acentos em DXF ANSI_1252 (ver [[ARMADILHAS]]). Agentes e orçamento: não nesta fase.
+
+## 2026-10-13 (noite): PDF do arquiteto na app — FEITO (parte do PDF fechada, a pedido do Ordep)
+- Novo separador **"PDF do arquiteto"**: carregar PDF → lista de páginas (designação, escala, piso, nº de áreas no quadro, camada de paredes sugerida; sugere a planta "proposto" com mais áreas) → escolher página, camada de paredes, camada de caixilhos/aros, escala e piso → **Detetar** (pré-visualização SVG colorida + avisos/erros + tabela área calculada vs quadro) → **Importar** (substitui só as divisões desse piso; `confirmed=False`; paredes passam a fundo da planta e entram na exportação DXF).
+- Código: `cad/pdfread.py`, `cad/divisoes.py`, `web/service.py` (pdf_analisar/pdf_detetar/pdf_importar), `web/server.py` (rotas `pdf`, `pdf_detetar`, `pdf_importar`; corpo binário até 60 MB), `web/static/app.js`. Dependências novas em `requirements.txt`: pikepdf, pdfplumber, pypdfium2, numpy, scipy → **no PC do Ordep: `pip install -r requirements.txt`**.
+- Resultado na planta real (PDF de alterações, pág. 5, piso 0): 13 divisões fechadas; **6 de 11 comparáveis a ±3% do quadro** (Garagem −0,3%, Escritório −1,2%, Lavandaria −1,6%, Quarto 1 −1,7%, Quarto 2 −2,1%, IS.1 −3,0%); escala 1:100 confirmada pelas áreas. Assinalados (não escondidos): espaço aberto Hall 1+Sala+Cozinha+Dispensa+Hall 2+Hall 3 fundido (dividir à mão); Quarto 3+Closet fundidos; IS.2/IS.3 −24% e IS.4 −83% (resguardos de duche/banheira partem a divisão); Circulação só parcial; Alpendres = não fechados (não importados); 7 espaços fechados sem nome (roupeiros/courettes).
+- Verificado: 58 testes (`python run_tests.py`); fluxo completo no Chromium (carregar → detetar → importar → planta com paredes a cinzento → resultado). Corrigidos 2 defeitos antigos: projeto novo gravava JSON sem listas (`equipment` undefined na app) e cálculo de projeto vazio dava erro 500 (agora mensagem clara).
+- NÃO verificado no PC do Ordep (ligação ao computador caiu). Fazer: `git pull`, `pip install -r requirements.txt`, `python run_tests.py`, `python run_app.py`, testar o separador com o PDF.
+- **Próximo:** testar com o **DWG** do Ordep (DWG é binário: converter para DXF ASCII com ODA File Converter/LibreCAD/AutoCAD, ou ler direto se houver biblioteca); reaproveitar `cad/divisoes.py` (paredes → divisões) no DXF, porque o importador DXF atual só aceita polilinhas fechadas de áreas.
 
 ## APP WEB v1 (2026-10-12, última fase)
 Arrancar: `python run_app.py` → http://127.0.0.1:8765 (só localhost; dados em `projetos/<slug>/`, **ignorado pelo Git**: fazer cópia à parte).

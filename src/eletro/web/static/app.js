@@ -1,8 +1,8 @@
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false};
+const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false, pdf: null, pdfSel: null, pdfDet: null};
 const TABS = [["divisoes", "Divisões"], ["equip", "Equipamentos"], ["alim", "Alimentação / quadro"], ["conv", "Convenção"], ["res", "Resultado"],
-  ["planta", "Planta + circuitos"], ["unif", "Unifilar"], ["mat", "Material"], ["rev", "Revisões"], ["dxf", "DXF do arquiteto"], ["exp", "Exportar"]];
+  ["planta", "Planta + circuitos"], ["unif", "Unifilar"], ["mat", "Material"], ["rev", "Revisões"], ["dxf", "DXF do arquiteto"], ["pdf", "PDF do arquiteto"], ["exp", "Exportar"]];
 const msg = (t, err) => { const m = $("#msg"); m.textContent = t; m.className = err ? "err" : ""; };
 async function api(url, body, raw) {
   const r = await fetch(url, body === undefined ? {} : {method: "POST", body: raw ? body : JSON.stringify(body)});
@@ -51,7 +51,7 @@ V.divisoes = m => {
     else if (k === "confirmed") r.confirmed = e.checked; else r[k] = e.value;
   }));
   m.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const id = rs[+b.dataset.del].id; rs.splice(+b.dataset.del, 1);
-    S.P.openings = S.P.openings.filter(o => o.room_id !== id); S.P.equipment = S.P.equipment.filter(o => o.room_id !== id); marcar(); render(); });
+    S.P.openings = S.P.openings.filter(o => o.room_id !== id); S.P.equipment = (S.P.equipment || []).filter(o => o.room_id !== id); marcar(); render(); });
   $("#add").onclick = () => { let n = 1; while (rs.some(r => r.id === "r" + n)) n++;
     rs.push({id: "r" + n, name: "Nova divisão", use: usos()[0], polygon: [[0, 0], [3, 0], [3, 3], [0, 3]], area_m2: null, height_m: 2.6, floor: 0, source: "manual", confirmed: false}); marcar(); render(); };
 };
@@ -141,9 +141,46 @@ V.dxf = m => {
   if (i) $("#imp").onclick = async () => { try {
     const r = await api(`/api/p/${S.slug}/importar`, {camada: $("#cam").value, unit_m: +$("#un").value});
     S.P.rooms = r.divisoes; S.P.openings = r.aberturas; S.P.base = r.base;
-    S.P.equipment = S.P.equipment.filter(e => r.divisoes.some(d => d.id === e.room_id));
+    S.P.equipment = (S.P.equipment || []).filter(e => r.divisoes.some(d => d.id === e.room_id));
     if (!S.P.panel || !r.divisoes.some(d => d.id === S.P.panel.room_id)) S.P.panel = r.divisoes.length ? {room_id: r.divisoes[0].id, pos: r.divisoes[0].polygon[0]} : null;
     msg(r.avisos.join(" | ") || `${r.divisoes.length} divisões importadas`); marcar(); S.tab = "divisoes"; render(); } catch (e) { msg(e.message, true); } };
+};
+V.pdf = m => {
+  const a = S.pdf, pg = a && S.pdfSel ? a.paginas.find(p => p.pagina === S.pdfSel) : null, r = S.pdfDet;
+  const cor = {erro: "#c62828", aviso: "#9a6700", info: "var(--mut)"};
+  m.innerHTML = `<p>PDF <b>vetorial</b> plotado do CAD (com camadas). Escolha a página (planta de um piso), a camada das paredes e a dos caixilhos/aros. As divisões detetadas ficam <b>por confirmar</b> e são validadas contra o quadro de áreas do arquiteto, se existir.</p>
+  <div class=row><input type=file id=fp accept=".pdf,application/pdf"> <span class=mut id=fpst></span></div>
+  ${a ? `${a.avisos.map(x => `<p class=err>⚠ ${esc(x)}</p>`).join("")}
+  ${tab(["", "Pág.", "Designação", "Escala", "Piso", "Áreas no quadro", "Camada paredes (sug.)"], [])
+    .replace("</table>", a.paginas.filter(p => p.vetorial).map(p => `<tr><td><input type=radio name=pg value=${p.pagina} ${p.pagina === S.pdfSel ? "checked" : ""}></td><td>${p.pagina}</td><td>${esc(p.designacao)}</td><td>${p.escala ? "1:" + p.escala : "?"}</td><td>${p.piso ?? ""}</td><td>${p.n_areas_quadro || ""}</td><td>${esc(p.sugestao_camada_paredes || "")}</td></tr>`).join("") + "</table>")}` : ""}
+  ${pg ? `<div class=row>
+    <label>Paredes <select id=cp>${Object.entries(pg.camadas).map(([c, n]) => `<option value="${esc(c)}" ${c === pg.sugestao_camada_paredes ? "selected" : ""}>${esc(c)} (${n})</option>`).join("")}</select></label>
+    <label>Caixilhos/aros <select id=cv><option value="">(nenhuma)</option>${Object.entries(pg.camadas).map(([c, n]) => `<option value="${esc(c)}" ${c === pg.sugestao_camada_vaos ? "selected" : ""}>${esc(c)} (${n})</option>`).join("")}</select></label>
+    <label>Escala 1: <input type=number id=ce value="${pg.escala || 100}"></label>
+    <label>Piso <input type=number id=cpi value="${pg.piso ?? 0}" style="width:60px"></label>
+    <button class=p id=det>Detetar divisões</button></div>` : a ? "<p class=mut>Escolha uma página.</p>" : ""}
+  ${r ? `<h3>Resultado (página ${r.pagina}, piso ${r.piso}) — ${r.resumo.divisoes} divisões fechadas, ${r.resumo.ok} de ${r.resumo.comparadas} batem com o quadro (±3%), <span style="color:#c62828">${r.resumo.erros} erros</span>, <span style="color:#9a6700">${r.resumo.avisos} avisos</span></h3>
+    ${r.escala ? `<p>Escala: ${r.escala.validada ? "<b style='color:#1a7f37'>confirmada</b> pelas áreas" : "<b class=err>NÃO confirmada</b>"} (${r.escala.dentro_3pct ?? 0} de ${r.escala.n} divisões a ±3%${r.escala.escala_sugerida ? ` · sugerida 1:${r.escala.escala_sugerida}` : ""})</p>` : ""}
+    ${r.avisos.map(x => `<p style="margin:2px 0;color:${cor[x.nivel]}">${x.nivel === "erro" ? "✖" : "⚠"} ${esc(x.msg)}</p>`).join("")}
+    ${tab(["Divisão", "Estado", "Área calculada m²", "Quadro m²", "Dif. %"], r.validacao.map(v => [v.nome, v.estado, v.area_calc ?? "", v.area_quadro ?? "", v.dif_pct ?? ""]))}
+    <div class=row><button class=p id=impp>Importar para o piso ${r.piso} (substitui só as divisões deste piso)</button>${r.resumo.erros ? `<span class=err>Há ${r.resumo.erros} erros: as divisões com erro entram na mesma, por confirmar, para corrigir à mão.</span>` : ""}</div>
+    <div class=svgbox>${r.svg}</div>
+    <p class=mut>Verde: bate com o quadro · amarelo: 3–8% · vermelho: &gt;8% ou divisões fundidas · azul: sem área no quadro.</p>` : ""}`;
+  $("#fp").onchange = async ev => { const f = ev.target.files[0]; if (!f) return; $("#fpst").textContent = "a ler…";
+    try { S.pdf = await api(`/api/p/${S.slug}/pdf`, await f.arrayBuffer(), true); S.pdfSel = S.pdf.sugestao_pagina; S.pdfDet = null; msg(`PDF lido: ${S.pdf.paginas.length} páginas`); render(); }
+    catch (e) { $("#fpst").textContent = ""; msg(e.message, true); } };
+  m.querySelectorAll("input[name=pg]").forEach(x => x.onchange = () => { S.pdfSel = +x.value; S.pdfDet = null; render(); });
+  const params = () => ({pagina: S.pdfSel, camadas_paredes: [$("#cp").value], camadas_vaos: $("#cv").value ? [$("#cv").value] : [], escala: +$("#ce").value, piso: +$("#cpi").value});
+  if (pg) $("#det").onclick = async () => { msg("a detetar…"); try { S.pdfDet = await api(`/api/p/${S.slug}/pdf_detetar`, params()); msg("deteção concluída"); render(); } catch (e) { msg(e.message, true); } };
+  if (r) $("#impp").onclick = async () => { try {
+    const x = await api(`/api/p/${S.slug}/pdf_importar`, params());
+    const fora = S.P.rooms.filter(d => (d.floor ?? 0) !== x.piso), novos = new Set(x.divisoes.map(d => d.id));
+    const ids = new Set(fora.map(d => d.id).concat([...novos]));
+    S.P.rooms = fora.concat(x.divisoes);
+    S.P.openings = (S.P.openings || []).filter(o => ids.has(o.room_id) && !novos.has(o.room_id)).concat(x.aberturas);
+    S.P.equipment = (S.P.equipment || []).filter(e => ids.has(e.room_id)); S.P.base = x.base;
+    if (!S.P.panel || !ids.has(S.P.panel.room_id)) S.P.panel = S.P.rooms.length ? {room_id: S.P.rooms[0].id, pos: S.P.rooms[0].polygon[0]} : null;
+    msg(`${x.divisoes.length} divisões importadas no piso ${x.piso} (por confirmar). Guarde para criar revisão.`); marcar(); S.tab = "divisoes"; render(); } catch (e) { msg(e.message, true); } };
 };
 V.exp = m => {
   m.innerHTML = `<div class=row><button id=r>Relatório HTML (memória de cálculo + material)</button><button id=d1>DXF planta + circuitos</button><button id=d2>DXF unifilar</button><button id=j>Resultado JSON</button></div>

@@ -1,5 +1,5 @@
 """Logica da aplicacao (sem HTTP): armazenamento por projeto, calculo, revisoes, DXF do arquiteto.
-projetos/<slug>/: current.json, rev_<N>.json, base.dxf, perfil.json (opcional)."""
+projetos/<slug>/: current.json, rev_<N>.json, base.dxf, base.pdf (opcional), perfil.json (opcional)."""
 from __future__ import annotations
 import json, re, datetime
 from pathlib import Path
@@ -10,6 +10,7 @@ from ..rules.dotacao import carregar_perfil
 from ..rules.ited import carregar as carregar_ited
 from ..calc.material import lista_material
 from ..cad import dxfread
+from ..cad.dxf import Dxf
 from ..cad.desenho import planta, unifilar, para_svg, para_dxf, base_do_arquiteto
 from .relatorio import relatorio_html
 
@@ -46,9 +47,9 @@ class Servico:
         base = json.loads(EXEMPLO.read_text(encoding="utf-8")) if exemplo else {
             "name": slug, "rooms": [], "revision": 1, "supply": {"phases": 1},
             "revisions": [{"number": 1, "date": str(datetime.date.today()), "author": "", "reason": "versao inicial"}]}
-        Project.model_validate(base)
-        (d / "current.json").write_text(json.dumps(base, ensure_ascii=False, indent=1), encoding="utf-8")
-        (d / "rev_1.json").write_text(json.dumps(base, ensure_ascii=False, indent=1), encoding="utf-8")
+        txt = Project.model_validate(base).model_dump_json(indent=1)   # modelo completo: todas as listas presentes
+        (d / "current.json").write_text(txt, encoding="utf-8")
+        (d / "rev_1.json").write_text(txt, encoding="utf-8")
         return self.abrir(slug)
 
     def perfil(self, slug):
@@ -59,7 +60,7 @@ class Servico:
         d = self._dir(slug)
         if not (d / "current.json").exists(): raise Erro("projeto inexistente")
         return {"slug": slug, "project": json.loads((d / "current.json").read_text(encoding="utf-8")),
-                "perfil": self.perfil(slug), "tem_base_dxf": (d / "base.dxf").exists()}
+                "perfil": self.perfil(slug), "tem_base_dxf": (d / "base.dxf").exists(), "tem_base_pdf": (d / "base.pdf").exists()}
 
     def guardar_perfil(self, slug, perfil: dict):
         for k in ("dotacao", "circuitos", "condicoes_instalacao", "comprimentos", "quadro"):
@@ -74,6 +75,8 @@ class Servico:
 
     def calcular(self, slug, proj: dict, perfil: dict | None = None):
         p0 = Project.model_validate(proj)
+        if not p0.rooms:
+            raise Erro("projeto sem divisoes: importar a planta (DXF/PDF do arquiteto) ou acrescentar divisoes")
         perfil = perfil or self.perfil(slug)
         res = calcular(p0, perfil, carregar_ited(str(ITED_DEFAULT)))
         p, conflitos = resolve(p0)
@@ -122,6 +125,44 @@ class Servico:
         if not (unit_m > 0): raise Erro("unidade invalida")
         r = dxfread.extrair_divisoes(dxfread.ler(f.read_text(encoding="utf-8", errors="replace")), camada, unit_m)
         return {**r, "base": {"file": "base.dxf", "unit_m": unit_m}}
+
+    # ---- PDF do arquiteto (vetorial, com camadas) ----
+    def pdf_analisar(self, slug, dados: bytes):
+        from ..cad import pdfread
+        a = pdfread.analisar(dados)
+        (self._dir(slug) / "base.pdf").write_bytes(dados)
+        return a
+
+    def _pdf_detetar(self, slug, pagina, camadas_paredes, camadas_vaos, escala, piso):
+        from ..cad import pdfread, divisoes
+        f = self._dir(slug) / "base.pdf"
+        if not f.exists(): raise Erro("carregar primeiro o PDF")
+        if not camadas_paredes: raise Erro("escolher a camada das paredes")
+        e = pdfread.extrair(f.read_bytes(), int(pagina), list(camadas_paredes), float(escala), list(camadas_vaos or []))
+        piso = int(piso if piso is not None else (e["piso"] if e["piso"] is not None else 0))
+        r = divisoes.detetar(e["segmentos"], e["palavras"], e["quadro_areas"], piso, float(escala), aux=e["aux"])
+        return e, r, piso
+
+    def pdf_detetar(self, slug, pagina, camadas_paredes, camadas_vaos, escala, piso=None):
+        """So pre-visualiza: nao altera o projeto."""
+        from ..cad import divisoes
+        e, r, piso = self._pdf_detetar(slug, pagina, camadas_paredes, camadas_vaos, escala, piso)
+        vaos = divisoes.filtrar_vaos(e["segmentos"], e["aux"])
+        return {**r, "piso": piso, "pagina": int(pagina), "designacao": e["designacao"], "quadro_areas": e["quadro_areas"],
+                "svg": divisoes.svg_previsao(e["segmentos"], r, vaos)}
+
+    def pdf_importar(self, slug, pagina, camadas_paredes, camadas_vaos, escala, piso=None):
+        """Devolve as divisoes do piso (confirmed=False) e grava as paredes como base.dxf (metros) para o fundo da planta
+        e para a exportacao DXF. O cliente substitui SO as divisoes desse piso."""
+        from ..cad import divisoes
+        e, r, piso = self._pdf_detetar(slug, pagina, camadas_paredes, camadas_vaos, escala, piso)
+        if not r["divisoes"]: raise Erro("nenhuma divisao fechada detetada: nada para importar (ver avisos)")
+        d = Dxf({"ARQ-PAREDES": 8, "ARQ-VAOS": 9})
+        for a, b in e["segmentos"]: d.line("ARQ-PAREDES", a, b)
+        for a, b in divisoes.filtrar_vaos(e["segmentos"], e["aux"]): d.line("ARQ-VAOS", a, b)
+        (self._dir(slug) / "base.dxf").write_text(d.dumps(), encoding="utf-8")
+        return {"divisoes": r["divisoes"], "aberturas": r["aberturas"], "avisos": r["avisos"], "piso": piso,
+                "base": {"file": "base.dxf", "unit_m": 1.0}}
 
     def exportar_dxf(self, slug, proj: dict, que: str = "planta"):
         p0 = Project.model_validate(proj)

@@ -25,3 +25,7 @@
 - [ ] Conteúdo mínimo legal das peças de um projeto (DGEG).
 - [ ] DXF real de uma planta de arquiteto (ASCII) para testar leitura/importação e a exportação; ver nomes de camadas e unidades reais. Verificar também o `$DWGCODEPAGE` (AutoCAD PT costuma usar ANSI_1252): o upload lê como UTF-8 e pode estragar acentos (ver ARMADILHAS 2026-10-13).
 - [ ] `projetos/` está fora do Git: onde guardar cópias de segurança dos projetos do Ordep (repo privado separado?).
+- [ ] (2026-10-13) DWG do Ordep: em que versão vem e se dá para exportar DXF ASCII (AutoCAD "Guardar como DXF", ODA File Converter gratuito). Comparar o resultado com o PDF (mesma casa).
+- [ ] (2026-10-13) Piso -1 (cave): só existe em "vermelhos/amarelos" (pág. 17) no PDF de alterações; confirmar com o arquiteto se há planta proposta da cave.
+- [ ] (2026-10-13) IS.2/IS.3/IS.4 ficam abaixo do quadro porque os resguardos de duche/banheira (na camada de paredes ou vistas) partem a divisão. Decidir: juntar sub-regiões sem nome à divisão vizinha com nome, ou deixar o Ordep corrigir à mão.
+- [ ] (2026-10-13) Portas exteriores numa parede grossa são classificadas como "janela" (não há forma de distinguir só pela geometria). Rever na app.
