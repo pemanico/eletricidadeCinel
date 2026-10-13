@@ -63,3 +63,12 @@ def test_http_smoke_e_erros():
     assert req("/static/../server.py")[0] in (404, 400)
     assert req("/api/p/t3/calc", {"project": {"name": "x", "rooms": [{"id": "a"}]}})[0] == 400
     srv.shutdown()
+
+def test_pendencias_bloqueiam_enquanto_ha_por_confirmar():
+    from eletro.engine import pendencias, relatorio_texto
+    r = _res(); pd = pendencias(r)
+    assert pd["bloqueado"] and pd["POR_CONFIRMAR"] > 0                       # tabelas da edicao 2000
+    assert "NAO UTILIZAVEL" in relatorio_texto(r)
+    from eletro.web.relatorio import relatorio_html
+    p = load(str(RAIZ / "examples/moradia_t3/projeto.json"))
+    assert "NÃO UTILIZÁVEL COMO PROJETO" in relatorio_html(p, r)

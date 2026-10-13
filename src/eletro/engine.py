@@ -237,8 +237,16 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None) -> Resu
                       "Tabelas de correntes admissiveis e de secoes minimas: edicao 2000, POR CONFIRMAR",
                       "Saida e RASCUNHO nao assinado"])
 
+def pendencias(r: Resultado) -> dict:
+    """Contagem de linhas que impedem tratar a saida como utilizavel. Rascunho SEMPRE; 'bloqueado' = ha pontos por confirmar/violacoes."""
+    n = {e: sum(1 for v in r.verificacoes if v.estado == e) for e in (NAO_CUMPRE, POR_CONFIRMAR, CONVENCAO, AVISO)}
+    n["erros_circuito"] = sum(1 for c in r.circuitos if c.erro)
+    n["bloqueado"] = bool(n[NAO_CUMPRE] or n[POR_CONFIRMAR] or n[AVISO] or n["erros_circuito"])
+    return n
+
 def relatorio_texto(r: Resultado) -> str:
-    out = [f"PROJETO: {r.projeto} (rev {r.revisao}) - RASCUNHO", "", "PONTOS POR DIVISAO (convencao)"]
+    pd = pendencias(r)
+    out = [f"PROJETO: {r.projeto} (rev {r.revisao}) - RASCUNHO" + (f" - NAO UTILIZAVEL: {pd[NAO_CUMPRE]} nao cumpre, {pd[POR_CONFIRMAR]} por confirmar, {pd[AVISO]} avisos, {pd['erros_circuito']} circuitos com erro" if pd["bloqueado"] else ""), "", "PONTOS POR DIVISAO (convencao)"]
     for rid, d in r.pontos.items():
         out.append(f"  {rid}: luz {d['luz']}, tomadas {d['tomadas']}, interruptores {d['interruptores']}")
     out += ["", "CIRCUITOS"]

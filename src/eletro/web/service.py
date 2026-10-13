@@ -5,7 +5,7 @@ import json, re, datetime
 from pathlib import Path
 from ..schema.project import Project, Revision
 from ..schema.dynamic import resolve, diff
-from ..engine import calcular
+from ..engine import calcular, pendencias
 from ..rules.dotacao import carregar_perfil
 from ..rules.ited import carregar as carregar_ited
 from ..calc.material import lista_material
@@ -78,7 +78,7 @@ class Servico:
         res = calcular(p0, perfil, carregar_ited(str(ITED_DEFAULT)))
         p, conflitos = resolve(p0)
         fundo = self._fundo(slug, p0)
-        return {"resultado": json.loads(res.model_dump_json()), "material": lista_material(res), "conflitos": conflitos,
+        return {"resultado": {**json.loads(res.model_dump_json()), "pendencias": pendencias(res)}, "material": lista_material(res), "conflitos": conflitos,
                 "planta_svg": para_svg(planta(p, res), fundo), "unifilar_svg": para_svg(unifilar(res), esp=1.5)}
 
     def guardar(self, slug, proj: dict, motivo: str, autor: str = ""):

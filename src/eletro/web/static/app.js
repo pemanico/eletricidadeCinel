@@ -93,7 +93,8 @@ const tab = (cab, rows) => `<table><tr>${cab.map(c => `<th>${c}</th>`).join("")}
 V.res = m => {
   if (!S.R) { m.innerHTML = "<p class=err>Sem resultado (ver mensagem).</p>"; return; }
   const r = S.R.resultado, q = r.quadro;
-  m.innerHTML = `<p>Potência mínima RTIEBT 801.5.2.2: <b>${r.potencia_minima_kva} kVA</b>${q ? ` · instalada ${q.p_inst_w} W · cálculo ${q.p_calc_w} W (${q.s_calc_kva} kVA) → contratar <b>${q.potencia_a_contratar_kva} kVA</b> · geral <b>${q.geral_in_a} A</b> · ${q.modulos.total_modulos} módulos` : ""}</p>
+  const pd = r.pendencias, bloq = pd && pd.bloqueado ? `<div style="border:2px solid #c62828;padding:8px;margin-bottom:8px"><b>NÃO UTILIZÁVEL COMO PROJETO</b> — ${pd.NAO_CUMPRE} não cumpre · ${pd.POR_CONFIRMAR} por confirmar · ${pd.AVISO} avisos · ${pd.erros_circuito} circuitos com erro</div>` : "";
+  m.innerHTML = bloq + `<p>Potência mínima RTIEBT 801.5.2.2: <b>${r.potencia_minima_kva} kVA</b>${q ? ` · instalada ${q.p_inst_w} W · cálculo ${q.p_calc_w} W (${q.s_calc_kva} kVA) → contratar <b>${q.potencia_a_contratar_kva} kVA</b> · geral <b>${q.geral_in_a} A</b> · ${q.modulos.total_modulos} módulos` : ""}</p>
   ${S.R.conflitos.map(c => `<p class=err>CONFLITO: ${esc(c)}</p>`).join("")}<h3>Circuitos</h3>` +
     tab(["id", "tipo", "pts", "Ib", "In", "curva", "mm²", "Iz", "L m", "origem", "queda %", "máx %", "DDR", "erro"], r.circuitos.map(c => [c.id, c.tipo, c.pontos, c.ib_a, c.in_a, c.curva, c.s_mm2, c.iz_a, c.comprimento_m, c.comprimento_origem, c.queda_pct, c.queda_max_pct, c.ddr, c.erro || ""])) +
     `<h3>Verificações</h3><table>${r.verificacoes.map(v => `<tr><td class="e ${v.estado}">${v.estado}</td><td>${esc(v.ref)}</td><td>${esc(v.texto)}</td></tr>`).join("")}</table>

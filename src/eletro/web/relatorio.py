@@ -1,7 +1,7 @@
 """Relatorio HTML (RASCUNHO) com todos os calculos, verificacoes, quadro de cargas e material."""
 from __future__ import annotations
 from html import escape as h
-from ..engine import Resultado
+from ..engine import Resultado, pendencias
 from ..schema.project import Project
 from ..calc.material import lista_material
 from ..cad.desenho import planta, unifilar, para_svg
@@ -25,6 +25,9 @@ def relatorio_html(p: Project, r: Resultado) -> str:
          f"<h1>Memória de cálculo — {h(p.name)} (revisão {r.revisao})</h1>",
          "<div class='b'><b>RASCUNHO NÃO ASSINADO.</b> Gerado por software a partir de convenções editáveis e tabelas (edição 2000) por confirmar. "
          "A validação, assinatura e responsabilidade são de técnico habilitado.</div>"]
+    pd = pendencias(r)
+    if pd["bloqueado"]:
+        o.append(f"<div class='b'><b>NÃO UTILIZÁVEL COMO PROJETO.</b> Pendências: {pd['NAO_CUMPRE']} não cumpre · {pd['POR_CONFIRMAR']} por confirmar (tabelas/fontes) · {pd['AVISO']} avisos · {pd['erros_circuito']} circuitos com erro. Resolver todas antes de qualquer uso fora do estudo.</div>")
     o.append("<h2>1. Pressupostos</h2><ul>" + "".join(f"<li>{h(x)}</li>" for x in r.pressupostos) + "</ul>")
     o.append(f"<h2>2. Potência</h2><p>Mínima regulamentar (RTIEBT 801.5.2.2): <b>{r.potencia_minima_kva} kVA</b> · compartimentos contados: {r.n_compartimentos}.</p>")
     nomes = {x.id: x.name for x in p.rooms}
