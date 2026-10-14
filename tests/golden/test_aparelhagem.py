@@ -82,7 +82,15 @@ def test_preencher_reproduz_a_convencao_e_alturas():
     for rid, d in conv["pontos"].items():           # mesmas contagens, agora com origem PLANTA
         assert res["pontos"][rid]["origem"] == "PLANTA"
         assert all(res["pontos"][rid][k] == d[k] for k in ("luz", "tomadas", "interruptores")), rid
-    assert [c["id"] for c in res["circuitos"]] == [c["id"] for c in conv["circuitos"]]
+    # circuitos a partir dos pontos: todos os pontos de luz/tomada ligados, max. 8 por circuito (801.5.3)
+    cat_de = {q["id"]: CAT["simbolos"][q["kind"]]["categoria"] for q in P["points"]}
+    cargas = [q for q, c in cat_de.items() if c in ("luz", "tomada")]
+    assert sorted(res["pontos_circuito"]) == sorted(cargas + [q for q, c in cat_de.items() if c == "dedicado"])
+    for c in res["circuitos"]:
+        assert c["origem_pontos"] == "PLANTA" and c["pontos"] <= 8 and len(c["pontos_ids"]) == c["pontos"]
+    assert sum(c["pontos"] for c in res["circuitos"] if c["tipo"] == "iluminacao") == sum(d["luz"] for d in conv["pontos"].values())
+    assert sum(c["pontos"] for c in res["circuitos"] if c["tipo"] == "tomadas") == sum(d["tomadas"] for d in conv["pontos"].values())
+    assert res["quadro"]["n_mcb"] == len(res["circuitos"])
     rooms = {r["id"]: r for r in P["rooms"]}
     for q in P["points"]:
         assert _dentro(q["pos"], rooms[q["room_id"]]["polygon"]), q
@@ -175,6 +183,7 @@ def test_app_tem_editor_de_aparelhagem_e_tabela():
     js = (Path(__file__).parents[2] / "src/eletro/web/static/app.js").read_text(encoding="utf-8")
     assert '["apar", "Aparelhagem (planta)"]' in js and "/preencher" in js and "/api/simbolos" in js
     assert '["alt", "Tabela de alturas"]' in js and "/reaplicar" in js
+    assert "<h3>Quadro elétrico</h3>" in js and "Aparelhagem e circuitos" in js and "q.circuit = v || null" in js
 
 def test_tabela_real_e_valida_e_tem_fonte_em_todos_os_valores():
     """So estrutura (os VALORES podem mudar durante o curso)."""
@@ -229,3 +238,52 @@ def test_tabela_alterada_avisa_e_reaplicar_so_mexe_nos_da_convencao():
     assert all(novo[q["id"]]["height_m"] == 0.40 and novo[q["id"]]["height_ver"] == 2 for q in toms[1:])
     P["points"] = r["points"]
     assert not any("tabela antiga" in v["texto"] for v in sv.calcular("t3", P)["resultado"]["verificacoes"])
+
+from eletro.calc.percursos import percurso
+
+def test_percurso_teto_e_parede_calculados_a_mao():
+    q = {"pos": (0, 0), "piso": 0, "pe_direito": 2.6, "altura": 1.5}
+    a = {"id": "a", "pos": (3, 0), "piso": 0, "pe_direito": 2.6, "altura": 0.3}
+    b = {"id": "b", "pos": (3, 2), "piso": 0, "pe_direito": 2.6, "altura": 0.3}
+    # teto: sobe 1.1; 3 + desce 2.3 = 6.4; sobe 2.3 + 2 + desce 2.3 = 13.0
+    t = percurso(q, [a, b], 1.0, 3.0, "teto")
+    assert t["por_ponto"] == {"a": 6.4, "b": 13.0} and t["total_m"] == 13.0 and t["horizontal_m"] == 5.0 and t["vertical_m"] == 8.0
+    # parede: 3 + |0.3-1.5| = 4.2; + 2 + 0 = 6.2
+    w = percurso(q, [a, b], 1.0, 3.0, "parede")
+    assert w["por_ponto"] == {"a": 4.2, "b": 6.2} and w["total_m"] == 6.2
+    luz = {"id": "l", "pos": (2, 2), "piso": 0, "pe_direito": 2.6, "altura": None}       # luz no teto: sem descida
+    assert percurso(q, [luz], 1.2, 3.0, "teto")["total_m"] == round(1.1 + 4 * 1.2, 2)
+    outro = {**b, "piso": 1}
+    assert percurso(q, [a, outro], 1.0, 3.0, "parede")["entre_pisos"] == 1
+
+def test_circuito_escolhido_a_mao_e_respeitado_e_validado():
+    sv, P = _t3_preenchido()
+    toms = [q for q in P["points"] if q["kind"] == "tomada"][:9]
+    for q in toms: q["circuit"] = "TOM-COZ"
+    res = sv.calcular("t3", P)["resultado"]
+    c = next(c for c in res["circuitos"] if c["id"] == "TOM-COZ")
+    assert c["pontos"] == 9 and sorted(c["pontos_ids"]) == sorted(q["id"] for q in toms)
+    assert any(v["ref"] == "RTIEBT 801.5.3" and v["estado"] == "NAO_CUMPRE" and "TOM-COZ" in v["texto"] for v in res["verificacoes"])
+    luz = next(q for q in P["points"] if q["kind"] == "luz_teto"); luz["circuit"] = "TOM-COZ"
+    res = sv.calcular("t3", P)["resultado"]
+    assert any("mistura iluminacao e tomadas" in v["texto"] for v in res["verificacoes"])
+
+def test_cabo_ate_cada_ponto_cresce_ao_longo_do_circuito():
+    sv, P = _t3_preenchido()
+    res = sv.calcular("t3", P)["resultado"]
+    for c in res["circuitos"]:
+        d = [res["pontos_circuito"][q]["cabo_ate_m"] for q in c["pontos_ids"]]
+        assert d == sorted(d) and (not d or abs(d[-1] - c["comprimento_m"]) < 0.02), c["id"]
+
+def test_equipamento_usa_o_ponto_dedicado_colocado():
+    sv, P = _t3_preenchido()
+    e = P["equipment"][0]
+    q = next(q for q in P["points"] if q["room_id"] == e["room_id"] and CAT["simbolos"][q["kind"]]["categoria"] == "dedicado")
+    res = sv.calcular("t3", P)["resultado"]
+    c = next(c for c in res["circuitos"] if c["id"] == f"EQ-{e['id']}")
+    assert c["pontos_ids"] == [q["id"]] and c["origem_pontos"] == "PLANTA"
+    longe = json.loads(json.dumps(P)); qq = next(x for x in longe["points"] if x["id"] == q["id"])
+    r = next(r for r in P["rooms"] if r["id"] == e["room_id"])
+    xs = [v[0] for v in r["polygon"]]; qq["pos"] = [max(xs) - 0.2, qq["pos"][1]]
+    c2 = next(c for c in sv.calcular("t3", longe)["resultado"]["circuitos"] if c["id"] == f"EQ-{e['id']}")
+    assert c2["comprimento_m"] != c["comprimento_m"]          # mover o ponto muda o comprimento

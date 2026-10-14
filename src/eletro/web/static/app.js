@@ -1,6 +1,6 @@
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false, pdf: null, pdfSel: null, pdfDet: null, cat: null, ap: {piso: 0, sel: null, pal: null, vb: null, fundo: {}, alturas: true}};
+const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false, pdf: null, pdfSel: null, pdfDet: null, cat: null, ap: {piso: 0, sel: null, pal: null, vb: null, fundo: {}, alturas: true, circ: false}};
 const TABS = [["divisoes", "Divisões"], ["apar", "Aparelhagem (planta)"], ["alt", "Tabela de alturas"], ["equip", "Equipamentos"], ["alim", "Alimentação / quadro"], ["conv", "Convenção"], ["res", "Resultado"],
   ["planta", "Planta + circuitos"], ["unif", "Unifilar"], ["mat", "Material"], ["rev", "Revisões"], ["dxf", "DXF do arquiteto"], ["pdf", "PDF do arquiteto"], ["exp", "Exportar"]];
 // mensagens de resultado de uma acao ficam 10 s; o "calculado" automatico nao as apaga
@@ -18,6 +18,7 @@ async function calc() {
   try { S.R = await api(`/api/p/${S.slug}/calc`, {project: S.P, perfil: S.perfil}); msg("calculado", false, true); }
   catch (e) { S.R = null; msg(e.message, true); }
   if (["res", "planta", "unif", "mat"].includes(S.tab)) render();
+  else if (S.tab === "apar" && S.ap.aoCalcular && !["INPUT", "SELECT"].includes(document.activeElement?.tagName)) S.ap.aoCalcular();
 }
 async function listar(sel) {
   const l = await api("/api/projetos"); $("#sel").innerHTML = l.map(p => `<option value="${esc(p.slug)}">${esc(p.slug)} — ${esc(p.name)}</option>`).join("");
@@ -92,19 +93,27 @@ V.conv = m => {
   $("#gp").onclick = async () => { const p = ler(); if (!p) return; try { await api(`/api/p/${S.slug}/perfil`, {perfil: p}); S.perfil = p; msg("convenção guardada"); calc(); } catch (e) { msg(e.message, true); } };
 };
 const tab = (cab, rows) => `<table><tr>${cab.map(c => `<th>${c}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table>`;
-V.res = m => {
+V.res = async m => {
   if (!S.R) { m.innerHTML = "<p class=err>Sem resultado (ver mensagem).</p>"; return; }
+  if (!S.cat && (S.P.points || []).length) S.cat = await api("/api/simbolos");
   const r = S.R.resultado, q = r.quadro;
   const pd = r.pendencias, bloq = pd && pd.bloqueado ? `<div style="border:2px solid #c62828;padding:8px;margin-bottom:8px"><b>NÃO UTILIZÁVEL COMO PROJETO</b> — ${pd.NAO_CUMPRE} não cumpre · ${pd.POR_CONFIRMAR} por confirmar · ${pd.AVISO} avisos · ${pd.erros_circuito} circuitos com erro</div>` : "";
   m.innerHTML = bloq + `<p>Potência mínima RTIEBT 801.5.2.2: <b>${r.potencia_minima_kva} kVA</b>${q ? ` · instalada ${q.p_inst_w} W · cálculo ${q.p_calc_w} W (${q.s_calc_kva} kVA) → contratar <b>${q.potencia_a_contratar_kva} kVA</b> · geral <b>${q.geral_in_a} A</b> · ${q.modulos.total_modulos} módulos` : ""}</p>
   ${S.R.conflitos.map(c => `<p class=err>CONFLITO: ${esc(c)}</p>`).join("")}<h3>Circuitos</h3>` +
-    tab(["id", "tipo", "pts", "Ib", "In", "curva", "mm²", "Iz", "L m", "origem", "queda %", "máx %", "DDR", "erro"], r.circuitos.map(c => [c.id, c.tipo, c.pontos, c.ib_a, c.in_a, c.curva, c.s_mm2, c.iz_a, c.comprimento_m, c.comprimento_origem, c.queda_pct, c.queda_max_pct, c.ddr, c.erro || ""])) +
+    tab(["id", "tipo", "pts", "pontos de", "Ib", "In", "curva", "mm²", "Iz", "PE mm²", "L m", "origem L", "queda %", "máx %", "DDR", "erro"], r.circuitos.map(c => [c.id, c.tipo, c.pontos, c.origem_pontos === "PLANTA" ? "planta" : "convenção", c.ib_a, c.in_a, c.curva, c.s_mm2, c.iz_a, c.pe_mm2 ?? "", c.comprimento_m, c.comprimento_origem, c.queda_pct, c.queda_max_pct, c.ddr, c.erro || ""])) +
+    (q ? `<h3>Quadro elétrico</h3>` + tab(["Aparelho", "Calibre", "Características", "Protege"], [
+        ["Interruptor/disjuntor geral", q.geral_in_a + " A", `2P · poder de corte ${q.poder_corte_ka} kA (assumido)`, "instalação"],
+        ...q.ddr.map(d => [`Diferencial ${d.id}`, d.in_a + " A", `${d.idn_ma} mA tipo ${d.tipo} · corrente de cálculo ${d.corrente_calculo_a} A`, d.circuitos.join(", ")]),
+        ...r.circuitos.filter(c => !c.erro).map(c => [`Disjuntor ${c.id}`, c.in_a + " A", `curva ${c.curva} · 1P+N · cabo ${c.s_mm2} mm² (PE ${c.pe_mm2} mm²)`, `${c.tipo}, ${c.pontos} pt (${c.ddr})`]),
+        ["Caixa do quadro", q.modulos.total_modulos + " módulos", `${q.modulos.fileiras} fileira(s), com reserva`, ""]]) : "") +
+    (Object.keys(r.pontos_circuito || {}).length ? `<h3>Aparelhagem e circuitos</h3>` + (() => { const rooms = Object.fromEntries(S.P.rooms.map(x => [x.id, x]));
+      return tab(["Ponto", "Divisão", "Tipo", "Altura", "Circuito", "Cabo desde o quadro (m)"], (S.P.points || []).filter(x => r.pontos_circuito[x.id]).map(x => [x.id, rooms[x.room_id]?.name, S.cat?.simbolos[x.kind]?.nome || x.kind, x.height_m == null ? "teto" : x.height_m.toFixed(2), r.pontos_circuito[x.id].circuito + (x.circuit ? " (manual)" : ""), r.pontos_circuito[x.id].cabo_ate_m])); })() : "") +
     `<h3>Verificações</h3><table>${r.verificacoes.map(v => `<tr><td class="e ${v.estado}">${v.estado}</td><td>${esc(v.ref)}</td><td>${esc(v.texto)}</td></tr>`).join("")}</table>
   <h3>Pressupostos</h3><ul>${r.pressupostos.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
 };
 V.planta = m => {
   if (!S.R) { m.innerHTML = "<p class=err>Sem resultado.</p>"; return; }
-  m.innerHTML = `<p class=mut>${S.painelModo ? "<b>Clique na planta para colocar o quadro.</b> " : ""}Posições dos pontos indicativas (RASCUNHO). Cinzento = DXF do arquiteto.</p><div class=svgbox id=sv>${S.R.planta_svg}</div>`;
+  m.innerHTML = `<p class=mut>${S.painelModo ? "<b>Clique na planta para colocar o quadro.</b> " : ""}${(S.P.points || []).length ? "Aparelhagem colocada: os circuitos seguem a cadeia real dos pontos (percursos em L, indicativos)." : "Posições dos pontos indicativas."} RASCUNHO. Cinzento = paredes do arquiteto.</p><div class=svgbox id=sv>${S.R.planta_svg}</div>`;
   const svg = $("#sv svg");
   if (S.painelModo) svg.style.cursor = "crosshair";
   svg.onclick = ev => {
@@ -217,6 +226,7 @@ V.apar = async m => {
     <button class=p id=apre>Preencher pela convenção (divisões vazias)</button>
     <label><input type=checkbox id=asub> substituir o que está no piso</label>
     <label><input type=checkbox id=aalt ${A.alturas ? "checked" : ""}> mostrar alturas</label>
+    <label><input type=checkbox id=acir ${A.circ ? "checked" : ""}> mostrar circuitos</label>
     <button id=afit>Ajustar vista</button><span class=mut>Roda do rato = zoom · arrastar o fundo = mover · Del = apagar · Esc = largar</span></div>
   <div id=apvel></div>
   <div style="display:grid;grid-template-columns:230px 1fr 260px;gap:10px;align-items:start">
@@ -247,6 +257,14 @@ V.apar = async m => {
       h += simboloSVG(q.kind, q.pos[0], q.pos[1], k, `data-q="${q.id}" style="cursor:move"`);
       if (q.id === A.sel) h += `<circle cx="${q.pos[0]}" cy="${-q.pos[1]}" r="${1.6 * k}" fill="none" stroke="#0969da" stroke-width="${k * .2}" stroke-dasharray="${k * .4}"/>`;
       if (A.alturas && !(q.kind === "luz_teto" && q.height_m == null)) { const hh = q.height_m == null ? "teto" : q.height_m.toFixed(2); h += `<text x="${q.pos[0] + 1.2 * k}" y="${-q.pos[1] + 1.6 * k}" font-size="${k * .95}" fill="${q.height_origem === "MANUAL" ? "#9a6700" : "#666"}" font-family="sans-serif">${hh}</text>`; } }
+    if (A.circ && S.R) { const pc = S.R.resultado.pontos_circuito || {}, cores = {};
+      const cor = id => cores[id] ??= `hsl(${(Object.keys(cores).length * 67) % 360} 70% 38%)`;
+      const pts = Object.fromEntries(S.P.points.map(q => [q.id, q]));
+      for (const c of S.R.resultado.circuitos) { if (!c.pontos_ids.length) continue; const cl = cor(c.id);
+        let cur = S.P.panel && rooms[S.P.panel.room_id] && (rooms[S.P.panel.room_id].floor ?? 0) === A.piso ? S.P.panel.pos : null;
+        for (const id of c.pontos_ids) { const q = pts[id]; if (!q || (rooms[q.room_id].floor ?? 0) !== A.piso) continue;
+          if (cur) h += `<polyline points="${cur[0]},${-cur[1]} ${q.pos[0]},${-cur[1]} ${q.pos[0]},${-q.pos[1]}" fill="none" stroke="${cl}" stroke-width="${sw * 1.4}" stroke-dasharray="${sw * 5} ${sw * 3}" opacity=".8"/>`;
+          h += `<text x="${q.pos[0] - 1.2 * k}" y="${-q.pos[1] - 1.4 * k}" font-size="${k * .9}" fill="${cl}" font-family="sans-serif" font-weight="600">${esc(c.id)}</text>`; cur = q.pos; } } }
     svg.innerHTML = h; svg.style.cursor = A.pal ? "crosshair" : "grab";
   }
   function detalhe() {
@@ -258,12 +276,19 @@ V.apar = async m => {
       <p><label>Altura ao eixo (m) <input type=number step=0.05 min=0 id=dh value="${q.height_m ?? ""}" placeholder="teto"></label><br>
       <span class=mut>Tabela v${S.cat.versao}: ${def == null ? "teto" : def.toFixed(2) + " m"} · origem: <b class="${q.height_origem === "MANUAL" ? "CONVENCAO" : ""}">${q.height_origem}</b>${q.height_ver ? ` (v${q.height_ver})` : ""}<br>Fonte: ${esc(fonteDe(q.kind, r))}</span></p>
       <p><label>x <input type=number step=0.05 id=dx value="${q.pos[0]}"></label> <label>y <input type=number step=0.05 id=dy value="${q.pos[1]}"></label></p>
+      ${(() => { const pc = S.R?.resultado.pontos_circuito?.[q.id]; const cat = S.cat.simbolos[q.kind]?.categoria;
+        if (!["luz", "tomada"].includes(cat)) return pc ? `<p>Circuito: <b>${esc(pc.circuito)}</b> · cabo desde o quadro ≈ ${pc.cabo_ate_m} m</p>` : "";
+        const ids = (S.R?.resultado.circuitos || []).filter(c => c.tipo === (cat === "luz" ? "iluminacao" : "tomadas")).map(c => c.id);
+        return `<p>Circuito: <b>${pc ? esc(pc.circuito) : "?"}</b>${q.circuit ? " (manual)" : " (automático)"}${pc ? ` · cabo desde o quadro ≈ ${pc.cabo_ate_m} m` : ""}<br>
+          <label>Escolher <input id=dc list=dcl value="${esc(q.circuit || "")}" placeholder="automático" size=10></label><datalist id=dcl>${ids.map(i => `<option value="${esc(i)}">`).join("")}</datalist>
+          <span class=mut>vazio = automático (por proximidade ao quadro)</span></p>`; })()}
       <p><label>Nota <input id=dn value="${esc(q.note || "")}" style="width:100%"></label></p>
       <div class=row><button id=drep>Repor altura da convenção</button><button id=ddel class=err>Apagar</button></div>`;
     $("#dk").onchange = e => { q.kind = e.target.value; if (q.height_origem === "CONVENCAO") { q.height_m = alturaDef(q.kind, r); q.height_ver = S.cat.versao; } mudou(); };
     $("#dh").onchange = e => { q.height_m = e.target.value === "" ? null : Math.round(+e.target.value * 100) / 100; q.height_origem = "MANUAL"; mudou(); };
     $("#dx").onchange = $("#dy").onchange = () => { mover(q, [+$("#dx").value, +$("#dy").value]); mudou(); };
     $("#dn").onchange = e => { q.note = e.target.value; marcar(); };
+    if ($("#dc")) $("#dc").onchange = e => { const v = e.target.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 20); q.circuit = v || null; mudou(); };
     $("#drep").onclick = () => { q.height_m = def; q.height_origem = "CONVENCAO"; q.height_ver = S.cat.versao; mudou(); };
     $("#ddel").onclick = () => apagar(q.id);
   }
@@ -280,6 +305,7 @@ V.apar = async m => {
     if (v.length) $("#arepl").onclick = async () => { try { const r = await api(`/api/p/${S.slug}/reaplicar`, {project: S.P}); S.P.points = r.points; msg(`${r.alterados} altura(s) atualizadas para a tabela v${r.versao}. Guarde para criar revisão.`); mudou(); } catch (e) { msg(e.message, true); } };
   }
   const tudo = () => { desenhar(); detalhe(); tabela(); aviso(); };
+  S.ap.aoCalcular = () => { if ($("#apsvg")) tudo(); };
   const mudou = () => { marcar(); tudo(); };
   function mover(q, pt) {
     const r = salaEm(pt);
@@ -315,6 +341,7 @@ V.apar = async m => {
   m.querySelectorAll("#apal [data-k]").forEach(b => b.onclick = () => { A.pal = A.pal === b.dataset.k ? null : b.dataset.k; A.sel = null; m.querySelectorAll("#apal [data-k]").forEach(x => x.style.outline = x.dataset.k === A.pal ? "2px solid var(--ac)" : ""); tudo(); });
   $("#apiso").onchange = e => { A.piso = +e.target.value; A.sel = null; render(); };
   $("#aalt").onchange = e => { A.alturas = e.target.checked; desenhar(); };
+  $("#acir").onchange = e => { A.circ = e.target.checked; desenhar(); };
   $("#afit").onclick = () => { A.vb = limites(); desenhar(); };
   $("#apre").onclick = async () => { try {
     const r = await api(`/api/p/${S.slug}/preencher`, {project: S.P, piso: A.piso, so_vazias: !$("#asub").checked});

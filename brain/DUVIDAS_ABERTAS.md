@@ -32,3 +32,5 @@
 - [ ] (2026-10-14) Alturas de montagem: os valores do catálogo são convenção (tomada 0,30; interruptor 1,10; bancada 1,10; AC 2,20; termoacumulador 1,80; aplique 2,00/2,25 em WC; RJ45/TV 0,30). Confirmar com o formador (UC de projeto) e com o Manual ITED (alturas das tomadas de telecomunicações).
 - [ ] (2026-10-14) Simbologia: qual é a exigida nas peças desenhadas (norma/entidade)? Os símbolos atuais são próprios.
 - [ ] (2026-10-14) RTIEBT 801.3.5.5 (aparelhagem > 1 m em locais com veículos): aplica-se a garagem de moradia unifamiliar?
+- [ ] (2026-10-14) Critério de queda de tensão nas tomadas: Ib = In (16 A) concentrada no fim, ou carga distribuída / Ib menor? Confirmar com o formador (afeta a secção em circuitos longos).
+- [ ] (2026-10-14) Percursos: altura do quadro (1,5 m), fator 1,2 e "tomadas pelas paredes" são convenção; validar com uma obra real medida.

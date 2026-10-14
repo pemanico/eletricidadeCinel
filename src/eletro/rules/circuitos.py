@@ -15,3 +15,23 @@ def agrupar_sequencial(itens: list[tuple[str, int]], maximo: int) -> list[list[t
         atual.append((rid, pts)); n += pts
     if atual: grupos.append(atual)
     return grupos
+
+
+def agrupar_proximidade(pontos: list[dict], inicio, piso_inicio: int, maximo: int) -> list[list[dict]]:
+    """CONVENCAO: agrupa pontos colocados na planta em circuitos de ate 'maximo' (801.5.3). Cada circuito parte do quadro
+    e segue sempre para o ponto livre mais proximo (Manhattan; pontos de outro piso so quando o piso atual acabar).
+    pontos = [{id, pos, piso, ...}]. Devolve grupos pela ordem da cadeia."""
+    livres = list(pontos)
+    grupos = []
+    while livres:
+        cur, piso, g = tuple(inicio), piso_inicio, []
+        while livres and len(g) < maximo:
+            mesmo = [q for q in livres if q["piso"] == piso] or livres
+            q = min(mesmo, key=lambda q: (abs(q["pos"][0] - cur[0]) + abs(q["pos"][1] - cur[1]), q["id"]))
+            g.append(q); livres.remove(q); cur, piso = tuple(q["pos"]), q["piso"]
+        grupos.append(g)
+    return grupos
+
+def ordenar_cadeia(pontos: list[dict], inicio, piso_inicio: int) -> list[dict]:
+    """Ordem de ligacao de um circuito definido a mao: vizinho mais proximo a partir do quadro."""
+    return agrupar_proximidade(pontos, inicio, piso_inicio, max(1, len(pontos)))[0] if pontos else []

@@ -8,7 +8,8 @@ from .schema.dynamic import resolve
 from .calc.cabos import ib_mono, next_in, size_for, K1_PVC, K2_EMBEBIDOS
 from .calc.comprimentos import comprimento_circuito
 from .rules.dotacao import pontos_divisao
-from .rules.circuitos import agrupar_sequencial
+from .rules.circuitos import agrupar_sequencial, agrupar_proximidade, ordenar_cadeia
+from .calc.percursos import percurso
 from .rules.potencia import compartimentos, potencia_minima_kva
 from .rules.quadro import potencia_a_contratar, calibre_geral_a, calibre_ddr, pe_mm2, modulos
 from .rules.ited import dotacao_ited
@@ -37,6 +38,8 @@ class Circuito(BaseModel):
     erro: Optional[str] = None
     p_inst_w: float = 0
     p_calc_w: float = 0
+    pontos_ids: list[str] = []          # aparelhagem colocada ligada a este circuito (pela ordem do cabo)
+    origem_pontos: str = "CONVENCAO"    # PLANTA (pontos colocados) | CONVENCAO (contagem por area)
     curva: str = ""
     ddr: str = ""
     pe_mm2: Optional[float] = None
@@ -63,6 +66,7 @@ class Resultado(BaseModel):
     pressupostos: list[str]
     quadro: Optional[Quadro] = None
     ited: dict = {}
+    pontos_circuito: dict[str, dict] = {}   # ponto -> {circuito, cabo_ate_m}
 
 def s_min_de(c, cfg) -> float:
     return cfg["s_min_mm2"].get("iluminacao" if c.tipo == "iluminacao" else "tomadas" if c.tipo == "tomadas"
@@ -130,15 +134,44 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None, simbolo
 
     sim, qd = perfil["simultaneidade"], perfil["quadro"]
 
-    def juntar(cid, tipo, grupo, ib, inn, s_min, q_lim, p_inst, fsim):
-        rids = [g[0] for g in grupo]
-        npts = sum(g[1] for g in grupo)
+    comp = perfil["comprimentos"]
+    altura_quadro, entre_pisos = comp.get("altura_quadro_m", 1.5), comp.get("entre_pisos_m", 3.0)
+    rooms_id = {r.id: r for r in p.rooms}
+    pontos_circuito: dict[str, dict] = {}
+    if p.points and not p.panel:
+        raise ValueError("Projeto sem quadro (panel): impossivel estimar comprimentos")
+    quadro_info = None
+    if p.panel:
+        rq = rooms_id[p.panel.room_id]
+        quadro_info = {"pos": tuple(p.panel.pos), "piso": rq.floor, "pe_direito": rq.height_m, "altura": altura_quadro}
+
+    def info(q):
+        r = rooms_id[q.room_id]
+        return {"id": q.id, "pos": tuple(q.pos), "piso": r.floor, "pe_direito": r.height_m, "altura": q.height_m,
+                "room_id": q.room_id, "kind": q.kind, "circuit": q.circuit}
+
+    def juntar(cid, tipo, grupo, ib, inn, s_min, q_lim, p_inst, fsim, cadeia=None):
+        """grupo = [(room_id, n)] (convencao) ou cadeia = [info(ponto)] (aparelhagem colocada, pela ordem do cabo)."""
+        if cadeia:
+            rids = list(dict.fromkeys(q["room_id"] for q in cadeia)); npts = len(cadeia)
+        else:
+            rids = [g[0] for g in grupo]; npts = sum(g[1] for g in grupo)
         manual = p.circuit_length_m.get(cid)
-        L = manual if manual is not None else comprimento_circuito(p, rids, fator, vert)
+        if cadeia:
+            pc = percurso(quadro_info, cadeia, fator, entre_pisos, "teto" if tipo == "iluminacao" else "parede")
+            L = manual if manual is not None else pc["total_m"]
+            for q in cadeia:
+                pontos_circuito[q["id"]] = {"circuito": cid, "cabo_ate_m": pc["por_ponto"][q["id"]]}
+            if pc["entre_pisos"] and manual is None:
+                v.append(Verificacao(ref="projeto", estado=AVISO, texto=f"{cid}: liga pontos noutro piso; comprimento entre pisos "
+                                     f"convencionado ({entre_pisos} m) e horizontal nao fiavel: medir e corrigir"))
+        else:
+            L = manual if manual is not None else comprimento_circuito(p, rids, fator, vert)
         c = dict(id=cid, tipo=tipo, divisoes=rids, pontos=npts, ib_a=round(ib, 3), in_a=inn,
                  comprimento_m=round(L, 2), comprimento_origem="MANUAL" if manual is not None else "ESTIMADO",
                  queda_max_pct=q_lim, p_inst_w=round(p_inst, 1), p_calc_w=round(p_inst * fsim, 1),
-                 curva=qd["curvas"].get(tipo, qd["curvas"]["outros"]))
+                 curva=qd["curvas"].get(tipo, qd["curvas"]["outros"]),
+                 pontos_ids=[q["id"] for q in cadeia] if cadeia else [], origem_pontos="PLANTA" if cadeia else "CONVENCAO")
         try:
             s = size_for(ib, inn, L, k1=k1, k2=k2, max_drop_pct=q_lim, metodo=cond["metodo"], min_s_mm2=s_min)
             c.update(s_mm2=s["s_mm2"], iz_a=round(s["iz"], 2), queda_pct=round(s["drop_pct"], 3), pe_mm2=pe_mm2(s["s_mm2"]))
@@ -146,34 +179,89 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None, simbolo
             c["erro"] = str(e)
         circuitos.append(Circuito(**c))
 
-    # Iluminacao e tomadas: agrupamento sequencial, max. 8 pontos (801.5.3)
+    # Iluminacao e tomadas, max. 8 pontos por circuito (801.5.3).
+    #  - divisoes com aparelhagem colocada: circuitos a partir dos pontos (escolhidos a mao ou por proximidade ao quadro)
+    #  - restantes divisoes: contagem da convencao, agrupamento sequencial por divisao
     mx = cfg["max_pontos_por_circuito"]
-    luz = agrupar_sequencial([(r.id, pontos[r.id]["luz"]) for r in p.rooms], mx)
-    for i, g in enumerate(luz, 1):
+    plan = {rid for rid, d in pontos.items() if d["origem"] == "PLANTA"}
+    usados_ids = {q.circuit for q in p.points if q.circuit}
+
+    def numerar(prefixo):
+        i = 0
+        while True:
+            i += 1
+            if f"{prefixo}-{i}" not in usados_ids:
+                usados_ids.add(f"{prefixo}-{i}"); yield f"{prefixo}-{i}"
+
+    def cadeias(categoria):
+        pts = [info(q) for q in p.points if q.room_id in plan and alturas.categoria(q.kind, cat) == categoria]
+        manuais: dict[str, list] = {}
+        for q in pts:
+            if q["circuit"]: manuais.setdefault(q["circuit"], []).append(q)
+        auto = [q for q in pts if not q["circuit"]]
+        out = [(lab, ordenar_cadeia(g, quadro_info["pos"], quadro_info["piso"])) for lab, g in sorted(manuais.items())]
+        out += [(None, g) for g in agrupar_proximidade(auto, quadro_info["pos"], quadro_info["piso"], mx)] if auto else []
+        return out
+
+    if plan:
+        cats_lab = {}
+        for q in p.points:
+            if q.circuit and q.room_id in plan:
+                cats_lab.setdefault(q.circuit, set()).add(alturas.categoria(q.kind, cat))
+        for lab, cs in cats_lab.items():
+            if {"luz", "tomada"} <= cs:
+                v.append(Verificacao(ref="projeto", estado=AVISO, texto=f"circuito {lab}: mistura iluminacao e tomadas (separar)"))
+            if cs - {"luz", "tomada"}:
+                v.append(Verificacao(ref="projeto", estado=AVISO, texto=f"circuito {lab}: so iluminacao e tomadas sao agrupadas em circuitos; "
+                                     f"interruptores, ITED e pontos dedicados ignoram a escolha"))
+    nl, nt = numerar("ILUM"), numerar("TOM")
+    w_luz = cfg["iluminacao"]["w_por_ponto"]
+    if plan:
+        for lab, g in cadeias("luz"):
+            pw = len(g) * w_luz
+            juntar(lab or next(nl), "iluminacao", None, pw / 230.0, cfg["iluminacao"]["in_a"], cfg["s_min_mm2"]["iluminacao"],
+                   q_max["iluminacao"], pw, sim["iluminacao"], cadeia=g)
+    for g in agrupar_sequencial([(r.id, pontos[r.id]["luz"]) for r in p.rooms if r.id not in plan], mx):
         n = sum(x[1] for x in g)
-        pw = n * cfg["iluminacao"]["w_por_ponto"]
-        juntar(f"ILUM-{i}", "iluminacao", g, pw / 230.0, cfg["iluminacao"]["in_a"],
+        if not n: continue
+        pw = n * w_luz
+        juntar(next(nl), "iluminacao", g, pw / 230.0, cfg["iluminacao"]["in_a"],
                cfg["s_min_mm2"]["iluminacao"], q_max["iluminacao"], pw, sim["iluminacao"])
-    tom = agrupar_sequencial([(r.id, pontos[r.id]["tomadas"]) for r in p.rooms], mx)
-    for i, g in enumerate(tom, 1):
-        inn = cfg["tomadas"]["in_a"]
-        juntar(f"TOM-{i}", "tomadas", g, float(inn), inn, cfg["s_min_mm2"]["tomadas"], q_max["outros"],
+    inn_t = cfg["tomadas"]["in_a"]
+    if plan:
+        for lab, g in cadeias("tomada"):
+            juntar(lab or next(nt), "tomadas", None, float(inn_t), inn_t, cfg["s_min_mm2"]["tomadas"], q_max["outros"],
+                   sim["tomada_circuito_w"], sim["tomadas"], cadeia=g)
+    for g in agrupar_sequencial([(r.id, pontos[r.id]["tomadas"]) for r in p.rooms if r.id not in plan], mx):
+        if not sum(x[1] for x in g): continue
+        juntar(next(nt), "tomadas", g, float(inn_t), inn_t, cfg["s_min_mm2"]["tomadas"], q_max["outros"],
                sim["tomada_circuito_w"], sim["tomadas"])
 
-    # Equipamentos dedicados; climatizacao (avac) agrupada ate 5 aparelhos por circuito (801.5.3)
+    # Equipamentos dedicados; climatizacao (avac) agrupada ate 5 aparelhos por circuito (801.5.3).
+    # Se houver ponto dedicado colocado na divisao do equipamento, o cabo vai ate esse ponto.
+    livres_ded = [info(q) for q in p.points if alturas.categoria(q.kind, cat) == "dedicado"] if p.points else []
+    mapa = (cat or {}).get("preenchimento", {}).get("equipamento", {})
+    def ponto_de(e):
+        cand = [q for q in livres_ded if q["room_id"] == e.room_id and q["kind"] == mapa.get(e.kind)] or \
+               [q for q in livres_ded if q["room_id"] == e.room_id]
+        if not cand: return None
+        livres_ded.remove(cand[0]); return cand[0]
     avac = [e for e in p.equipment if e.kind == "avac"]
-    for k in range(0, len(avac), cfg["max_aparelhos_climatizacao_por_circuito"]):
-        bloco = avac[k:k + cfg["max_aparelhos_climatizacao_por_circuito"]]
+    mxa = cfg["max_aparelhos_climatizacao_por_circuito"]
+    for k in range(0, len(avac), mxa):
+        bloco = avac[k:k + mxa]
         ib = ib_mono(sum(e.power_w for e in bloco)); inn = next_in(ib)
-        juntar(f"AVAC-{k // cfg['max_aparelhos_climatizacao_por_circuito'] + 1}", "climatizacao",
-               [(e.room_id, 1) for e in bloco], ib, inn, cfg["s_min_mm2"]["avac"], q_max["outros"],
-               sum(e.power_w for e in bloco), sim["climatizacao"])
+        cad = [x for x in (ponto_de(e) for e in bloco) if x]
+        cad = ordenar_cadeia(cad, quadro_info["pos"], quadro_info["piso"]) if cad and len(cad) == len(bloco) else None
+        juntar(f"AVAC-{k // mxa + 1}", "climatizacao", [(e.room_id, 1) for e in bloco], ib, inn, cfg["s_min_mm2"]["avac"],
+               q_max["outros"], sum(e.power_w for e in bloco), sim["climatizacao"], cadeia=cad)
     for e in p.equipment:
         if e.kind == "avac":
             continue
         ib = ib_mono(e.power_w); inn = next_in(ib)
+        q = ponto_de(e)
         juntar(f"EQ-{e.id}", e.kind, [(e.room_id, 1)], ib, inn, cfg["s_min_mm2"].get(e.kind, 2.5), q_max["outros"],
-               e.power_w, sim["equipamento"])
+               e.power_w, sim["equipamento"], cadeia=[q] if q else None)
 
     # Verificacoes regulamentares
     for c in circuitos:
@@ -279,9 +367,13 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None, simbolo
     return Resultado(
         projeto=p.name, revisao=p.revision, pontos=pontos, circuitos=circuitos,
         potencia_minima_kva=pmin, n_compartimentos=ncomp, verificacoes=v, quadro=quadro, ited=ited,
+        pontos_circuito=pontos_circuito,
         pressupostos=[f"Metodo {cond['metodo']}, ambiente {cond['temperatura_ambiente_c']} C (k1={k1}), "
                       f"{cond['n_circuitos_agrupados']} circuitos agrupados (k2={k2})",
                       f"Comprimentos ESTIMADOS (fator {fator}, descidas {vert} m) salvo correcao manual",
+                      f"Aparelhagem colocada: iluminacao pelo teto (sobe do quadro a {altura_quadro} m, desce a cada ponto); tomadas e "
+                      f"dedicados pelas paredes a altura dos pontos; horizontais em L x {fator}; entre pisos {entre_pisos} m (convencao)",
+                      "Queda de tensao com a corrente total do circuito em todo o comprimento (conservador)",
                       "Tomadas: Ib de calculo = In (conservador); iluminacao: "
                       f"{cfg['iluminacao']['w_por_ponto']} W/ponto",
                       "Tabelas de correntes admissiveis e de secoes minimas: edicao 2000, POR CONFIRMAR",

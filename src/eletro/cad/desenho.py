@@ -114,8 +114,19 @@ def planta(p0: Project, res: Resultado, incluir_divisoes: bool = True, catalogo:
                           "#2ca02c" if o.kind == "porta" else "#17becf"))
     qpos = tuple(p.panel.pos) if p.panel else None
     # percursos dos circuitos
+    pts_id = {q.id: q for q in p.points}
     for c in res.circuitos:
         cor, lay = COR.get(c.tipo, COR["outro"]), f"ELE-{c.id}"
+        if c.pontos_ids:                      # aparelhagem colocada: o cabo segue a cadeia real (em L)
+            cur = qpos
+            for pid in c.pontos_ids:
+                q = pts_id.get(pid)
+                if q is None: continue
+                if cur:
+                    prim.append(L(cur, (q.pos[0], cur[1]), lay, cor)); prim.append(L((q.pos[0], cur[1]), q.pos, lay, cor))
+                prim.append(T((q.pos[0] - 0.1, q.pos[1] + 0.2), 0.09, c.id, "ELE-CIRCUITOS", cor))
+                cur = tuple(q.pos)
+            continue
         pts, cur = [], qpos
         for rid in c.divisoes:
             if rid not in rooms or not rooms[rid].polygon: continue
@@ -157,7 +168,7 @@ def planta(p0: Project, res: Resultado, incluir_divisoes: bool = True, catalogo:
     x0, y0 = min(a for a, _ in allpts), min(b for _, b in allpts) - 0.8
     prim.append(T((x0, y0), 0.16, "LEGENDA (RASCUNHO nao assinado; " + ("aparelhagem colocada na planta, alturas hX.XX ao eixo" if p.points else "posicoes indicativas") + ")", "ELE-TEXTO"))
     for i, c in enumerate(res.circuitos):
-        prim.append(T((x0, y0 - 0.3 * (i + 1)), 0.13, f"{c.id}: {c.pontos} pt, {c.in_a} A {c.curva}, {c.s_mm2} mm2" + (" [ERRO]" if c.erro else ""),
+        prim.append(T((x0, y0 - 0.3 * (i + 1)), 0.13, f"{c.id}: {c.pontos} pt, {c.in_a} A {c.curva}, {c.s_mm2} mm2, {c.comprimento_m} m, dU {c.queda_pct}%" + (" [ERRO]" if c.erro else ""),
                       "ELE-TEXTO", COR.get(c.tipo, COR["outro"])))
     return prim
 

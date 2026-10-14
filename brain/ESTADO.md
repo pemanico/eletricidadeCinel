@@ -36,6 +36,15 @@ README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO"
 - Decisão pendente do Ordep: (a) pedir ao arquiteto o PDF original/DWG; (b) contorno semi-automático com o PDF como fundo + escala 1:50 + snap a vértices de parede + nomes importados; (c) extração automática de divisões (cara: portas abrem os polígonos).
 - **Próximo:** DXF real do arquiteto no separador "DXF do arquiteto" → relatar camadas/unidade/divisões antes de mexer em código. Risco já identificado: acentos em DXF ANSI_1252 (ver [[ARMADILHAS]]). Agentes e orçamento: não nesta fase.
 
+## 2026-10-14 (noite): cálculos ponto a ponto + quadro — FEITO
+Pedido do Ordep: cálculos de todas as tomadas/pontos de luz e dimensionamento do quadro. O motor já calculava circuitos e quadro; faltava ligar à aparelhagem colocada.
+- Divisões com aparelhagem colocada: cada ponto de luz/tomada pertence a um circuito. Automático = por proximidade ao quadro (cadeia de vizinho mais próximo, máx. 8 pontos, 801.5.3); ou **escolhido à mão** no editor (campo "Circuito", ex. TOM-COZ; >8 dá NAO_CUMPRE; misturar luz e tomadas dá AVISO). Divisões sem pontos continuam pela convenção.
+- **Comprimento real** (`calc/percursos.py`): iluminação pelo teto (sobe do quadro a 1,5 m, desce a cada ponto pela altura), tomadas/dedicados pelas paredes à altura dos pontos; horizontais em L × fator 1,2; entre pisos 3 m + AVISO. Cabo desde o quadro até cada ponto (tabela "Aparelhagem e circuitos"). Equipamentos usam o ponto dedicado colocado na divisão. Secção/Iz/queda/PE e quadro (geral, DDR, disjuntores, módulos, potência) recalculados a partir disto.
+- App: Resultado com tabela **Quadro elétrico** (geral, DDR e circuitos protegidos, disjuntores com curva/cabo/PE, caixa) e **Aparelhagem e circuitos**; editor com "mostrar circuitos" (percurso e id por ponto) e escolha manual do circuito; planta e DXF desenham a cadeia real.
+- Casa real (piso 0, preenchida pela convenção): 4 ILUM + 5 TOM, todas 1,5/2,5 mm². Exemplo T3: TOM a 18–28 m, 2,5 mm².
+- 81 testes (percursos calculados à mão: teto 6,4/13,0 m; parede 4,2/6,2 m).
+- **Pontos para debate:** Ib das tomadas = In (16 A) em todo o comprimento é conservador (convenção); com percurso pelo teto as tomadas passavam a 4 mm² — por isso tomadas vão pelas paredes. Icc/Zs e disparo magnético continuam NÃO verificados (falta Icc da e-Redes); tabelas da ed. 2000 por confirmar.
+
 ## 2026-10-14 (fim de tarde): tabela de alturas editável na app — FEITO
 O Ordep vai alterar as alturas durante o curso. Por isso:
 - Separador **"Tabela de alturas"**: altura por defeito e exceções por divisão (acrescentar/alterar/remover) para os 15 símbolos; **fonte obrigatória** ("UC, formador, data" / "norma, secção"); gravar cria **versão nova** + linha no **histórico** (data, autor, alteração de→para, fonte). Ficheiro: `data/convencoes/simbolos_alturas.json` (antes `_v1`), no repositório → o Ordep faz commit/push das alterações.

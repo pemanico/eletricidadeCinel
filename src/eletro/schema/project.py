@@ -63,6 +63,7 @@ class Ponto(BaseModel):
     height_m: Optional[float] = Field(default=None, ge=0, le=6)
     height_origem: Literal["CONVENCAO", "MANUAL"] = "CONVENCAO"
     height_ver: Optional[int] = None           # versao da tabela de alturas que deu a altura (se CONVENCAO)
+    circuit: Optional[str] = Field(default=None, max_length=20)   # circuito escolhido a mao (vazio = automatico)
     note: str = ""
 
 class Panel(BaseModel):
