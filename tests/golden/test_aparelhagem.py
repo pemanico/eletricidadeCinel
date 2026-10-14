@@ -1,7 +1,8 @@
 """Golden tests: aparelhagem colocada na planta (simbolos + alturas ao chao).
-Valores esperados: catalogo data/convencoes/simbolos_alturas_v1.json (CONVENCAO) e regras com fonte em
-rules/alturas.py (RTIEBT 701.71.2 e 801.3.5.5). Geometria verificada com formas conhecidas."""
-import json, math, tempfile
+Valores esperados: copia CONGELADA da tabela inicial (fixtures/simbolos_alturas_ref.json), para os testes nao
+partirem quando o Ordep alterar a tabela real (data/convencoes/simbolos_alturas.json) durante o curso.
+Regras com fonte em rules/alturas.py (RTIEBT 701.71.2 e 801.3.5.5). Geometria verificada com formas conhecidas."""
+import json, math, shutil, tempfile
 from pathlib import Path
 import arq_pdf
 from eletro.schema.project import Project, Ponto
@@ -11,10 +12,13 @@ from eletro.cad import colocar
 from eletro.cad.dxfread import _dentro
 from eletro.web.service import Servico
 
-CAT = alturas.carregar(str(alturas.CATALOGO_DEFAULT))
+REF = Path(__file__).parent / "fixtures" / "simbolos_alturas_ref.json"
+CAT = alturas.carregar(str(REF))
 
 def _sv():
-    tmp = tempfile.mkdtemp(); sv = Servico(tmp); sv.criar("t3", exemplo=True)
+    tmp = tempfile.mkdtemp()
+    tab = Path(tmp) / "simbolos_alturas.json"; shutil.copy(REF, tab)
+    sv = Servico(Path(tmp) / "projetos", simbolos=tab); sv.criar("t3", exemplo=True)
     return sv
 
 def _t3_preenchido():
@@ -160,13 +164,68 @@ def test_geometria_colocacao_em_divisao_obliqua_e_em_L():
 
 def test_fundo_por_piso_apos_importar_pdf():
     with tempfile.TemporaryDirectory() as tmp:
-        sv = Servico(tmp); sv.criar("c")
+        sv = Servico(tmp, simbolos=REF); sv.criar("c")
         sv.pdf_analisar("c", arq_pdf.pdf())
         sv.pdf_importar("c", 1, ["PAREDES"], ["VISTA"], 50, 0)
         f = sv.fundo_piso("c", 0)["segmentos"]
         assert len(f) > 20 and (Path(tmp) / "c" / "base_p0.dxf").exists()
         assert sv.fundo_piso("c", -1)["segmentos"] == f        # sem base do piso -1: recorre a base.dxf
 
-def test_app_tem_editor_de_aparelhagem():
+def test_app_tem_editor_de_aparelhagem_e_tabela():
     js = (Path(__file__).parents[2] / "src/eletro/web/static/app.js").read_text(encoding="utf-8")
     assert '["apar", "Aparelhagem (planta)"]' in js and "/preencher" in js and "/api/simbolos" in js
+    assert '["alt", "Tabela de alturas"]' in js and "/reaplicar" in js
+
+def test_tabela_real_e_valida_e_tem_fonte_em_todos_os_valores():
+    """So estrutura (os VALORES podem mudar durante o curso)."""
+    real = alturas.carregar(str(alturas.CATALOGO_DEFAULT))
+    alturas.validar(real)
+    assert set(real["simbolos"]) == set(CAT["simbolos"]) and real["versao"] >= 1 and real["historico"]
+    for k, s_ in real["simbolos"].items():
+        assert len(s_.get("fonte", "")) >= 3, k
+        for u in s_.get("por_uso", {}):
+            assert len(s_.get("fontes_por_uso", {}).get(u, "")) >= 3, (k, u)
+
+def test_alterar_tabela_exige_fonte_valida_e_versiona():
+    sv = _sv()
+    for alt, erro in (([{"kind": "tomada", "uso": "*", "altura": 0.4, "fonte": ""}], "fonte"),
+                      ([{"kind": "tomada", "uso": "*", "altura": 9, "fonte": "UC x"}], "altura invalida"),
+                      ([{"kind": "tomada", "uso": "*", "altura": "teto", "fonte": "UC x"}], "teto"),
+                      ([{"kind": "tomada", "uso": "piscina", "altura": 1, "fonte": "UC x"}], "uso desconhecido"),
+                      ([{"kind": "nao_existe", "uso": "*", "altura": 1, "fonte": "UC x"}], "desconhecido"),
+                      ([{"kind": "tomada", "uso": "*", "altura": 0.3, "fonte": CAT["simbolos"]["tomada"]["fonte"]}], "nada mudou")):
+        try:
+            sv.simbolos_alterar(alt, "Ordep"); assert False, alt
+        except Exception as e:
+            assert erro in str(e), (alt, e)
+    assert sv.simbolos()["versao"] == 1                     # nada gravado nas tentativas falhadas
+    r = sv.simbolos_alterar([{"kind": "tomada", "uso": "*", "altura": 0.4, "fonte": "UC 6006, formador, 2026-11-03"},
+                             {"kind": "tomada", "uso": "wc", "altura": None, "fonte": "UC 6006"},
+                             {"kind": "interruptor", "uso": "garagem", "altura": 1.3, "fonte": "obra X"}], "Ordep")
+    t = sv.simbolos()
+    assert t["versao"] == 2 and t["simbolos"]["tomada"]["altura"] == 0.4 and "wc" not in t["simbolos"]["tomada"]["por_uso"]
+    assert t["simbolos"]["interruptor"]["por_uso"]["garagem"] == 1.3
+    assert alturas.fonte_de("interruptor", "garagem", t) == "obra X"
+    assert [h["alteracao"] for h in t["historico"][-3:]] == ["tomada [*]: 0.3 -> 0.4", "tomada [wc]: 1.1 -> None", "interruptor [garagem]: None -> 1.3"]
+    assert all(h["autor"] == "Ordep" and h["versao"] == 2 for h in t["historico"][-3:])
+    assert len(r["alteracoes"]) == 3
+
+def test_tabela_alterada_avisa_e_reaplicar_so_mexe_nos_da_convencao():
+    sv, P = _t3_preenchido()
+    sala = next(r for r in P["rooms"] if r["use"] == "sala")["id"]
+    toms = [q for q in P["points"] if q["room_id"] == sala and q["kind"] == "tomada"]
+    toms[0]["height_m"] = 0.45; toms[0]["height_origem"] = "MANUAL"
+    assert all(q["height_ver"] == 1 for q in P["points"] if q["height_origem"] == "CONVENCAO")
+    sv.simbolos_alterar([{"kind": "tomada", "uso": "*", "altura": 0.40, "fonte": "UC 6006"}], "Ordep")
+    res = sv.calcular("t3", P)
+    av = [v for v in res["resultado"]["verificacoes"] if "tabela antiga" in v["texto"]]
+    assert len(av) == 1 and av[0]["estado"] == "AVISO" and av[0]["ref"] == "simbolos_alturas v2"
+    n_conv = sum(1 for q in P["points"] if q["kind"] == "tomada" and q["height_origem"] == "CONVENCAO"
+                 and next(r for r in P["rooms"] if r["id"] == q["room_id"])["use"] not in ("wc", "garagem"))
+    r = sv.reaplicar("t3", P)
+    assert r["alterados"] == n_conv and r["versao"] == 2
+    novo = {q["id"]: q for q in r["points"]}
+    assert novo[toms[0]["id"]]["height_m"] == 0.45 and novo[toms[0]["id"]]["height_origem"] == "MANUAL"   # manual intocado
+    assert all(novo[q["id"]]["height_m"] == 0.40 and novo[q["id"]]["height_ver"] == 2 for q in toms[1:])
+    P["points"] = r["points"]
+    assert not any("tabela antiga" in v["texto"] for v in sv.calcular("t3", P)["resultado"]["verificacoes"])

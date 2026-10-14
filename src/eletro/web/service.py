@@ -27,8 +27,9 @@ class Erro(ValueError):
     pass
 
 class Servico:
-    def __init__(self, pasta: Path | None = None):
+    def __init__(self, pasta: Path | None = None, simbolos: Path | None = None):
         self.pasta = Path(pasta) if pasta else RAIZ / "projetos"
+        self.simbolos_path = Path(simbolos) if simbolos else SIMBOLOS_DEFAULT   # tabela de alturas (partilhada por todos os projetos)
         self.pasta.mkdir(parents=True, exist_ok=True)
 
     def _dir(self, slug: str) -> Path:
@@ -81,12 +82,13 @@ class Servico:
         if not p0.rooms:
             raise Erro("projeto sem divisoes: importar a planta (DXF/PDF do arquiteto) ou acrescentar divisoes")
         perfil = perfil or self.perfil(slug)
-        res = calcular(p0, perfil, carregar_ited(str(ITED_DEFAULT)))
+        cat = self.simbolos()
+        res = calcular(p0, perfil, carregar_ited(str(ITED_DEFAULT)), cat)
         p, conflitos = resolve(p0)
         fundo = self._fundo(slug, p0)
         return {"resultado": {**json.loads(res.model_dump_json()), "pendencias": pendencias(res)},
-                "material": lista_material(res, pontos=p0.points, catalogo=self.simbolos()), "conflitos": conflitos,
-                "planta_svg": para_svg(planta(p, res), fundo), "unifilar_svg": para_svg(unifilar(res), esp=1.5)}
+                "material": lista_material(res, pontos=p0.points, catalogo=cat), "conflitos": conflitos,
+                "planta_svg": para_svg(planta(p, res, catalogo=cat), fundo), "unifilar_svg": para_svg(unifilar(res), esp=1.5)}
 
     def guardar(self, slug, proj: dict, motivo: str, autor: str = ""):
         """Nova revisao: N+1 em rev_N+1.json e current.json. Nunca altera revisoes antigas."""
@@ -132,7 +134,33 @@ class Servico:
 
     # ---- Aparelhagem na planta: simbolos, alturas, preenchimento ----
     def simbolos(self):
-        return alturas.carregar(str(SIMBOLOS_DEFAULT))
+        return alturas.carregar(str(self.simbolos_path))
+
+    def simbolos_alterar(self, alteracoes: list, autor: str = ""):
+        """Grava a tabela de alturas (nova versao + historico). O ficheiro esta no repositorio: fazer commit para o guardar."""
+        if not isinstance(alteracoes, list) or not alteracoes: raise Erro("sem alteracoes")
+        try:
+            novo, entradas = alturas.alterar(self.simbolos(), alteracoes, autor, str(datetime.date.today()))
+        except ValueError as e:
+            raise Erro(str(e))
+        alturas.guardar(novo, str(self.simbolos_path))
+        return {"tabela": novo, "alteracoes": entradas}
+
+    def reaplicar(self, slug, proj: dict, piso: int | None = None):
+        """Atualiza para a tabela atual as alturas dos pontos com origem CONVENCAO (os MANUAL nao mudam).
+        Devolve a lista completa de pontos e quantos mudaram; o cliente guarda a revisao."""
+        cat = self.simbolos()
+        p0 = Project.model_validate(proj)
+        rooms = {r.id: r for r in p0.rooms}
+        n = 0
+        for q in p0.points:
+            r = rooms[q.room_id]
+            if q.height_origem != "CONVENCAO" or (piso is not None and r.floor != piso) or q.kind not in cat["simbolos"]:
+                continue
+            h = alturas.altura_por_defeito(q.kind, r.use, cat, None)
+            if h != q.height_m: n += 1
+            q.height_m, q.height_ver = h, cat["versao"]
+        return {"points": [json.loads(q.model_dump_json()) for q in p0.points], "alterados": n, "versao": cat["versao"]}
 
     def fundo_piso(self, slug, piso: int):
         """Paredes do arquiteto (metros) para o editor: base_p<piso>.dxf (PDF importado) ou base.dxf."""
@@ -175,7 +203,8 @@ class Servico:
         novos = []
         def add(kind, r, xy):
             novos.append({"id": novo_id(), "kind": kind, "room_id": r.id, "pos": [round(xy[0], 3), round(xy[1], 3)],
-                          "height_m": alturas.altura_por_defeito(kind, r.use, cat, None), "height_origem": "CONVENCAO"})
+                          "height_m": alturas.altura_por_defeito(kind, r.use, cat, None), "height_origem": "CONVENCAO",
+                          "height_ver": cat["versao"]})
         for r in alvo:
             poly = [tuple(v) for v in r.polygon]
             n = res.pontos[r.id]; it = res.ited.get(r.id, {"rj45": 0, "tv": 0})
@@ -235,17 +264,19 @@ class Servico:
 
     def exportar_dxf(self, slug, proj: dict, que: str = "planta"):
         p0 = Project.model_validate(proj)
-        res = calcular(p0, self.perfil(slug), carregar_ited(str(ITED_DEFAULT)))
+        cat = self.simbolos()
+        res = calcular(p0, self.perfil(slug), carregar_ited(str(ITED_DEFAULT)), cat)
         p, _ = resolve(p0)
         u = p0.base.unit_m if p0.base else 1.0
         if que == "unifilar":
             return para_dxf(unifilar(res), 0.001).dumps()
-        prim = planta(p, res, incluir_divisoes=not p0.base)
+        prim = planta(p, res, incluir_divisoes=not p0.base, catalogo=cat)
         fundo = self._fundo(slug, p0) or []
         return para_dxf(fundo + prim, u).dumps()
 
     def relatorio(self, slug, proj: dict):
         p0 = Project.model_validate(proj)
-        res = calcular(p0, self.perfil(slug), carregar_ited(str(ITED_DEFAULT)))
+        cat = self.simbolos()
+        res = calcular(p0, self.perfil(slug), carregar_ited(str(ITED_DEFAULT)), cat)
         p, _ = resolve(p0)
-        return relatorio_html(p, res)
+        return relatorio_html(p, res, cat)

@@ -119,8 +119,13 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None, simbolo
         rooms_id = {r.id: r for r in p.rooms}
         for ref, est, txt in alturas.verificar(p.points, rooms_id, cat):
             v.append(Verificacao(ref=ref, estado=est, texto=txt))
-        v.append(Verificacao(ref=cat["id"], estado=CONVENCAO,
-                             texto="Alturas de montagem por defeito sao convencao (o RTIEBT nao fixa alturas gerais em habitacao)"))
+        velhos = alturas.desatualizados(p.points, rooms_id, cat)
+        if velhos:
+            v.append(Verificacao(ref=f"{cat['id']} v{cat['versao']}", estado=AVISO,
+                                 texto=f"{len(velhos)} ponto(s) com altura da tabela antiga ({', '.join(q.id for q in velhos[:8])}"
+                                       f"{'...' if len(velhos) > 8 else ''}): reaplicar a tabela no editor"))
+        v.append(Verificacao(ref=f"{cat['id']} v{cat['versao']}", estado=CONVENCAO,
+                             texto="Alturas de montagem: tabela editavel com fonte por valor (o RTIEBT nao fixa alturas gerais em habitacao)"))
     circuitos: list[Circuito] = []
 
     sim, qd = perfil["simultaneidade"], perfil["quadro"]

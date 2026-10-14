@@ -1,9 +1,11 @@
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false, pdf: null, pdfSel: null, pdfDet: null, cat: null, ap: {piso: 0, sel: null, pal: null, vb: null, fundo: {}, alturas: true}};
-const TABS = [["divisoes", "Divisões"], ["apar", "Aparelhagem (planta)"], ["equip", "Equipamentos"], ["alim", "Alimentação / quadro"], ["conv", "Convenção"], ["res", "Resultado"],
+const TABS = [["divisoes", "Divisões"], ["apar", "Aparelhagem (planta)"], ["alt", "Tabela de alturas"], ["equip", "Equipamentos"], ["alim", "Alimentação / quadro"], ["conv", "Convenção"], ["res", "Resultado"],
   ["planta", "Planta + circuitos"], ["unif", "Unifilar"], ["mat", "Material"], ["rev", "Revisões"], ["dxf", "DXF do arquiteto"], ["pdf", "PDF do arquiteto"], ["exp", "Exportar"]];
-const msg = (t, err) => { const m = $("#msg"); m.textContent = t; m.className = err ? "err" : ""; };
+// mensagens de resultado de uma acao ficam 10 s; o "calculado" automatico nao as apaga
+const msg = (t, err, auto) => { const m = $("#msg"); if (auto && Date.now() - (+m.dataset.t || 0) < 10000) return;
+  m.textContent = t; m.className = err ? "err" : ""; if (!auto) m.dataset.t = Date.now(); };
 async function api(url, body, raw) {
   const r = await fetch(url, body === undefined ? {} : {method: "POST", body: raw ? body : JSON.stringify(body)});
   const ct = r.headers.get("content-type") || "";
@@ -13,7 +15,7 @@ async function api(url, body, raw) {
 }
 let tmr; const marcar = () => { S.sujo = true; $("#sujo").textContent = "● por guardar"; clearTimeout(tmr); tmr = setTimeout(calc, 400); };
 async function calc() {
-  try { S.R = await api(`/api/p/${S.slug}/calc`, {project: S.P, perfil: S.perfil}); msg("calculado"); }
+  try { S.R = await api(`/api/p/${S.slug}/calc`, {project: S.P, perfil: S.perfil}); msg("calculado", false, true); }
   catch (e) { S.R = null; msg(e.message, true); }
   if (["res", "planta", "unif", "mat"].includes(S.tab)) render();
 }
@@ -188,6 +190,9 @@ const dentro = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 
   if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; };
 const pisos = () => [...new Set(S.P.rooms.map(r => r.floor ?? 0))].sort((a, b) => b - a);
 const alturaDef = (kind, room) => { const s = S.cat.simbolos[kind]; if (!s) return null; const h = (s.por_uso || {})[room.use] ?? s.altura; return h === "teto" ? null : h; };
+const fonteDe = (kind, room) => { const s = S.cat.simbolos[kind]; if (!s || !room) return ""; return (s.por_uso || {})[room.use] !== undefined ? (s.fontes_por_uso || {})[room.use] || "" : s.fonte || ""; };
+const velhos = () => { const rooms = Object.fromEntries(S.P.rooms.map(r => [r.id, r]));
+  return (S.P.points || []).filter(q => q.height_origem === "CONVENCAO" && rooms[q.room_id] && S.cat.simbolos[q.kind] && alturaDef(q.kind, rooms[q.room_id]) !== q.height_m); };
 const fmtH = (q, room) => q.height_m == null ? `teto (${room ? room.height_m : "?"} m)` : q.height_m.toFixed(2) + " m";
 function simboloSVG(kind, x, y, k, extra = "") {
   const s = S.cat.simbolos[kind]; if (!s) return `<text x="${x}" y="${-y}" font-size="${k}" fill="red">?</text>`;
@@ -213,11 +218,12 @@ V.apar = async m => {
     <label><input type=checkbox id=asub> substituir o que está no piso</label>
     <label><input type=checkbox id=aalt ${A.alturas ? "checked" : ""}> mostrar alturas</label>
     <button id=afit>Ajustar vista</button><span class=mut>Roda do rato = zoom · arrastar o fundo = mover · Del = apagar · Esc = largar</span></div>
+  <div id=apvel></div>
   <div style="display:grid;grid-template-columns:230px 1fr 260px;gap:10px;align-items:start">
     <div id=apal style="max-height:72vh;overflow:auto"><p class=mut style="margin:0 0 4px">Clique num símbolo e depois na planta. A altura é preenchida pela convenção (editável).</p>
       ${kinds.map(k => { const s = S.cat.simbolos[k]; return `<button data-k="${k}" title="${esc(s.nome)}" style="display:flex;gap:6px;align-items:center;width:100%;text-align:left;margin:2px 0;${A.pal === k ? "outline:2px solid var(--ac)" : ""}">${iconePal(k)}<span style="flex:1">${esc(s.nome)}<br><span class=mut>${s.altura === "teto" ? "teto" : s.altura.toFixed(2) + " m"}${s.por_uso ? " *" : ""}</span></span></button>`; }).join("")}
       <button data-k="__QE" style="width:100%;margin-top:6px;${A.pal === "__QE" ? "outline:2px solid var(--ac)" : ""}">▭ Quadro elétrico (QE)</button>
-      <p class=mut>* altura diferente em algumas divisões (WC, garagem, cozinha). Fonte: ${esc(S.cat.id)} — CONVENÇÃO, não norma.</p></div>
+      <p class=mut>* altura diferente em algumas divisões. Tabela de alturas v${S.cat.versao} (editável no separador "Tabela de alturas").</p></div>
     <div class=svgbox style="padding:0"><svg id=apsvg style="width:100%;height:72vh;touch-action:none;background:#fff;display:block"></svg></div>
     <div id=apdet></div></div>
   <h3>Aparelhagem do piso ${A.piso}</h3><div id=aptab></div>`;
@@ -250,15 +256,15 @@ V.apar = async m => {
     d.innerHTML = `<h3 style="margin-top:0">${esc(q.id)}</h3><p>Divisão: <b>${esc(r ? r.name : q.room_id)}</b> (${esc(r ? r.use : "")})</p>
       <label>Tipo <select id=dk>${kinds.map(k => `<option value="${k}" ${k === q.kind ? "selected" : ""}>${esc(S.cat.simbolos[k].nome)}</option>`).join("")}</select></label>
       <p><label>Altura ao eixo (m) <input type=number step=0.05 min=0 id=dh value="${q.height_m ?? ""}" placeholder="teto"></label><br>
-      <span class=mut>Convenção: ${def == null ? "teto" : def.toFixed(2) + " m"} · origem: <b class="${q.height_origem === "MANUAL" ? "CONVENCAO" : ""}">${q.height_origem}</b></span></p>
+      <span class=mut>Tabela v${S.cat.versao}: ${def == null ? "teto" : def.toFixed(2) + " m"} · origem: <b class="${q.height_origem === "MANUAL" ? "CONVENCAO" : ""}">${q.height_origem}</b>${q.height_ver ? ` (v${q.height_ver})` : ""}<br>Fonte: ${esc(fonteDe(q.kind, r))}</span></p>
       <p><label>x <input type=number step=0.05 id=dx value="${q.pos[0]}"></label> <label>y <input type=number step=0.05 id=dy value="${q.pos[1]}"></label></p>
       <p><label>Nota <input id=dn value="${esc(q.note || "")}" style="width:100%"></label></p>
       <div class=row><button id=drep>Repor altura da convenção</button><button id=ddel class=err>Apagar</button></div>`;
-    $("#dk").onchange = e => { q.kind = e.target.value; if (q.height_origem === "CONVENCAO") q.height_m = alturaDef(q.kind, r); mudou(); };
+    $("#dk").onchange = e => { q.kind = e.target.value; if (q.height_origem === "CONVENCAO") { q.height_m = alturaDef(q.kind, r); q.height_ver = S.cat.versao; } mudou(); };
     $("#dh").onchange = e => { q.height_m = e.target.value === "" ? null : Math.round(+e.target.value * 100) / 100; q.height_origem = "MANUAL"; mudou(); };
     $("#dx").onchange = $("#dy").onchange = () => { mover(q, [+$("#dx").value, +$("#dy").value]); mudou(); };
     $("#dn").onchange = e => { q.note = e.target.value; marcar(); };
-    $("#drep").onclick = () => { q.height_m = def; q.height_origem = "CONVENCAO"; mudou(); };
+    $("#drep").onclick = () => { q.height_m = def; q.height_origem = "CONVENCAO"; q.height_ver = S.cat.versao; mudou(); };
     $("#ddel").onclick = () => apagar(q.id);
   }
   function tabela() {
@@ -268,13 +274,18 @@ V.apar = async m => {
       : `<p class=mut>Sem aparelhagem neste piso: o cálculo usa a convenção (contagens por área). Use "Preencher pela convenção" para começar e depois ajuste.</p>`;
     $("#aptab").querySelectorAll("[data-r]").forEach(tr => tr.onclick = () => { A.sel = tr.dataset.r; tudo(); });
   }
-  const tudo = () => { desenhar(); detalhe(); tabela(); };
+  function aviso() {
+    const v = velhos(), el = $("#apvel");
+    el.innerHTML = v.length ? `<div style="border:1px solid #9a6700;padding:6px 8px;margin:6px 0;display:flex;gap:10px;align-items:center"><span>⚠ <b>${v.length}</b> ponto(s) têm a altura de uma versão antiga da tabela (agora v${S.cat.versao}). Os pontos com altura MANUAL não mudam.</span><button class=p id=arepl>Reaplicar tabela v${S.cat.versao}</button></div>` : "";
+    if (v.length) $("#arepl").onclick = async () => { try { const r = await api(`/api/p/${S.slug}/reaplicar`, {project: S.P}); S.P.points = r.points; msg(`${r.alterados} altura(s) atualizadas para a tabela v${r.versao}. Guarde para criar revisão.`); mudou(); } catch (e) { msg(e.message, true); } };
+  }
+  const tudo = () => { desenhar(); detalhe(); tabela(); aviso(); };
   const mudou = () => { marcar(); tudo(); };
   function mover(q, pt) {
     const r = salaEm(pt);
     if (!r) { msg("fora de qualquer divisão deste piso: posição não alterada", true); return false; }
     q.pos = [Math.round(pt[0] * 100) / 100, Math.round(pt[1] * 100) / 100];
-    if (r.id !== q.room_id) { q.room_id = r.id; if (q.height_origem === "CONVENCAO") q.height_m = alturaDef(q.kind, r); }
+    if (r.id !== q.room_id) { q.room_id = r.id; if (q.height_origem === "CONVENCAO") { q.height_m = alturaDef(q.kind, r); q.height_ver = S.cat.versao; } }
     return true;
   }
   function apagar(id) { S.P.points = S.P.points.filter(x => x.id !== id); if (A.sel === id) A.sel = null; mudou(); }
@@ -287,7 +298,7 @@ V.apar = async m => {
       const p = pt(ev), r = salaEm(p);
       if (!r) { msg("clique dentro de uma divisão deste piso", true); return; }
       if (A.pal === "__QE") { S.P.panel = {room_id: r.id, pos: [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100]}; A.pal = null; render(); marcar(); return; }
-      const q = {id: novoId(), kind: A.pal, room_id: r.id, pos: [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100], height_m: alturaDef(A.pal, r), height_origem: "CONVENCAO", note: ""};
+      const q = {id: novoId(), kind: A.pal, room_id: r.id, pos: [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100], height_m: alturaDef(A.pal, r), height_origem: "CONVENCAO", height_ver: S.cat.versao, note: ""};
       S.P.points.push(q); A.sel = q.id; mudou(); return;
     }
     if (g) { A.sel = g.dataset.q; drag = {q: S.P.points.find(x => x.id === A.sel), moveu: false}; svg.setPointerCapture(ev.pointerId); tudo(); return; }
@@ -311,6 +322,45 @@ V.apar = async m => {
   document.onkeydown = ev => { if (S.tab !== "apar" || ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
     if (ev.key === "Delete" && A.sel) apagar(A.sel); if (ev.key === "Escape") { A.pal = null; A.sel = null; render(); } };
   tudo();
+};
+// ---------- Tabela de alturas (editavel, versionada, com fonte) ----------
+V.alt = async m => {
+  S.cat = await api("/api/simbolos");
+  const C = S.cat, kinds = Object.keys(C.simbolos), USOS = ["sala", "quarto", "cozinha", "wc", "hall", "corredor", "arrumos", "garagem", "varanda", "escritorio", "lavandaria", "outro"];
+  const fmt = v => v === "teto" ? "teto" : (+v).toFixed(2);
+  m.innerHTML = `<p>Tabela de alturas ao eixo, a partir do pavimento acabado: <b>versão ${C.versao}</b>. Partilhada por todos os projetos. Cada alteração exige <b>fonte</b> (ex. "UC 6006, formador, 2026-11-03" ou "Manual ITED §x") e cria uma versão nova. Os pontos já colocados <b>não mudam sozinhos</b>: no editor aparece o aviso para reaplicar (só os pontos com altura da tabela; os MANUAL ficam).</p>
+  <p class=mut>Ficheiro <code>data/convencoes/simbolos_alturas.json</code> no repositório: faça commit/push para o guardar no GitHub. Valores sem fonte confirmada continuam a ser CONVENÇÃO.</p>
+  <table><tr><th></th><th>Símbolo</th><th>Altura por defeito (m)</th><th>Fonte</th><th>Exceções por divisão</th></tr>
+  ${kinds.map(k => { const s = C.simbolos[k], pu = s.por_uso || {}, fu = s.fontes_por_uso || {};
+    return `<tr><td>${iconePal(k)}</td><td>${esc(s.nome)}</td>
+    <td><input data-k="${k}" data-u="*" class=aval value="${fmt(s.altura)}" style="width:70px" ${s.altura === "teto" ? "title='teto = pé-direito da divisão'" : ""}></td>
+    <td class=mut style="max-width:260px">${esc(s.fonte || "")}</td>
+    <td>${Object.keys(pu).map(u => `<div><b>${u}</b> <input data-k="${k}" data-u="${u}" class=aval value="${fmt(pu[u])}" style="width:60px"> <button data-del="${k}|${u}" title="remover exceção">✕</button> <span class=mut>${esc(fu[u] || "")}</span></div>`).join("")}
+      <div><select data-nu="${k}"><option value="">+ exceção…</option>${USOS.filter(u => !(u in pu)).map(u => `<option>${u}</option>`).join("")}</select></div></td></tr>`; }).join("")}</table>
+  <div class=row style="position:sticky;bottom:0;background:var(--bg);padding:8px 0;border-top:1px solid var(--bd)"><span id=apend class=mut>Sem alterações.</span>
+    <label>Fonte <input id=afonte size=40 placeholder="obrigatória: UC, formador, data / norma, secção"></label><label>Autor <input id=aautor size=10 value="Ordep"></label>
+    <button class=p id=agrav disabled>Gravar nova versão</button><button id=adesc disabled>Descartar</button></div>
+  <h3>Histórico</h3>${tab(["Versão", "Data", "Autor", "Alteração", "Fonte"], [...(C.historico || [])].reverse().map(h => [h.versao, h.data, h.autor, h.alteracao, h.fonte]))}`;
+  const pend = new Map();      // chave kind|uso -> {kind, uso, altura}
+  const atual = (k, u) => u === "*" ? C.simbolos[k].altura : (C.simbolos[k].por_uso || {})[u];
+  const mostrar = () => { const n = pend.size; $("#apend").textContent = n ? `${n} alteração(ões) por gravar: ` + [...pend.values()].map(a => `${a.kind}[${a.uso}] ${a.altura === null ? "removida" : fmt(a.altura)}`).join(", ") : "Sem alterações.";
+    $("#agrav").disabled = !n; $("#adesc").disabled = !n; };
+  const ler = v => { v = v.trim().replace(",", "."); if (v.toLowerCase() === "teto") return "teto"; const x = Number(v); return v === "" || isNaN(x) ? undefined : Math.round(x * 100) / 100; };
+  m.querySelectorAll(".aval").forEach(el => el.onchange = () => { const k = el.dataset.k, u = el.dataset.u, v = ler(el.value);
+    if (v === undefined) { msg("altura inválida: número em metros (ex. 1.10) ou 'teto'", true); el.value = fmt(atual(k, u)); return; }
+    if (v === atual(k, u)) pend.delete(k + "|" + u); else pend.set(k + "|" + u, {kind: k, uso: u, altura: v}); el.style.background = pend.has(k + "|" + u) ? "#fff3cd" : ""; mostrar(); });
+  m.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const [k, u] = b.dataset.del.split("|"); pend.set(k + "|" + u, {kind: k, uso: u, altura: null}); b.parentElement.style.textDecoration = "line-through"; mostrar(); });
+  m.querySelectorAll("[data-nu]").forEach(sel => sel.onchange = () => { const k = sel.dataset.nu, u = sel.value; if (!u) return;
+    const d = document.createElement("div"); d.innerHTML = `<b>${u}</b> <input class=aval value="${fmt(C.simbolos[k].altura)}" style="width:60px;background:#fff3cd">`; sel.parentElement.before(d);
+    const inp = d.querySelector("input"); pend.set(k + "|" + u, {kind: k, uso: u, altura: ler(inp.value)});
+    inp.onchange = () => { const v = ler(inp.value); if (v === undefined) { msg("altura inválida", true); return; } pend.set(k + "|" + u, {kind: k, uso: u, altura: v}); mostrar(); };
+    [...sel.options].find(o => o.value === u)?.remove(); sel.value = ""; mostrar(); });
+  $("#adesc").onclick = () => render();
+  $("#agrav").onclick = async () => { const fonte = $("#afonte").value.trim();
+    if (fonte.length < 3) { msg("indique a fonte das alterações", true); $("#afonte").focus(); return; }
+    try { const r = await api("/api/simbolos", {alteracoes: [...pend.values()].map(a => ({...a, fonte})), autor: $("#aautor").value});
+      S.cat = r.tabela; msg(`Tabela gravada: versão ${S.cat.versao} (${r.alteracoes.length} alteração(ões)). Faça commit do ficheiro para o guardar no GitHub.`); render(); if (S.P) calc(); }
+    catch (e) { msg(e.message, true); } };
 };
 V.exp = m => {
   m.innerHTML = `<div class=row><button id=r>Relatório HTML (memória de cálculo + material)</button><button id=d1>DXF planta + circuitos</button><button id=d2>DXF unifilar</button><button id=j>Resultado JSON</button></div>

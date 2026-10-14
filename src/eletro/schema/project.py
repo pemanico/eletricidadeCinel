@@ -53,7 +53,7 @@ class Equipment(BaseModel):
     power_w: float = Field(gt=0)
 
 class Ponto(BaseModel):
-    """Aparelhagem colocada na planta (simbolo do catalogo data/convencoes/simbolos_alturas_v1.json).
+    """Aparelhagem colocada na planta (simbolo do catalogo data/convencoes/simbolos_alturas.json).
     height_m = altura do EIXO ao pavimento acabado; None = teto (pe-direito da divisao).
     height_origem: CONVENCAO (preenchida pelo catalogo) ou MANUAL (alterada pelo tecnico)."""
     id: str
@@ -62,6 +62,7 @@ class Ponto(BaseModel):
     pos: Point
     height_m: Optional[float] = Field(default=None, ge=0, le=6)
     height_origem: Literal["CONVENCAO", "MANUAL"] = "CONVENCAO"
+    height_ver: Optional[int] = None           # versao da tabela de alturas que deu a altura (se CONVENCAO)
     note: str = ""
 
 class Panel(BaseModel):

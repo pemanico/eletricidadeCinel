@@ -1,0 +1,750 @@
+{
+ "id": "simbolos_alturas",
+ "versao": 1,
+ "estatuto": "CONVENCAO",
+ "nota": "Alturas ao EIXO da aparelhagem, medidas do pavimento acabado, em metros. Valores iniciais HABITUAIS em habitação escolhidos como ponto de partida editável: o RTIEBT (sources/normativas) NÃO fixa alturas gerais para tomadas e interruptores em habitação. Regras com fonte que limitam alturas estão em src/eletro/rules/alturas.py (701.71.2 iluminação de casas de banho; 801.3.5.5 locais com veículos, POR CONFIRMAR em garagem de moradia). Desenhos dos símbolos: próprios, inspirados na simbologia corrente (círculo com X = ponto de luz, semicírculo = tomada), NÃO copiados de norma: confirmar a simbologia exigida pelo formador/entidade. Cada valor tem 'fonte' (altura por defeito) e 'fontes_por_uso' (excecoes). Editar pela app (separador 'Tabela de alturas'): cada alteracao exige fonte, aumenta 'versao' e fica em 'historico'.",
+ "tamanho_simbolo_m": 0.16,
+ "simbolos": {
+  "luz_teto": {
+   "nome": "Ponto de luz (teto)",
+   "categoria": "luz",
+   "cor": "#d4a017",
+   "desenho": [
+    {
+     "c": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "l": [
+      -0.7,
+      -0.7,
+      0.7,
+      0.7
+     ]
+    },
+    {
+     "l": [
+      -0.7,
+      0.7,
+      0.7,
+      -0.7
+     ]
+    }
+   ],
+   "altura": "teto",
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "luz_parede": {
+   "nome": "Aplique de parede",
+   "categoria": "luz",
+   "cor": "#d4a017",
+   "desenho": [
+    {
+     "c": [
+      0,
+      0.15,
+      0.85
+     ]
+    },
+    {
+     "l": [
+      -0.6,
+      -0.45,
+      0.6,
+      0.75
+     ]
+    },
+    {
+     "l": [
+      -0.6,
+      0.75,
+      0.6,
+      -0.45
+     ]
+    },
+    {
+     "l": [
+      -1,
+      -1,
+      1,
+      -1
+     ]
+    }
+   ],
+   "altura": 2.0,
+   "por_uso": {
+    "wc": 2.25
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "wc": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+   }
+  },
+  "interruptor": {
+   "nome": "Interruptor simples",
+   "categoria": "interruptor",
+   "cor": "#000000",
+   "desenho": [
+    {
+     "c": [
+      0,
+      0,
+      0.4
+     ]
+    },
+    {
+     "l": [
+      0.28,
+      0.28,
+      1,
+      1
+     ]
+    }
+   ],
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "comutador_lustre": {
+   "nome": "Comutador de lustre (duplo)",
+   "categoria": "interruptor",
+   "cor": "#000000",
+   "desenho": [
+    {
+     "c": [
+      0,
+      0,
+      0.4
+     ]
+    },
+    {
+     "l": [
+      0.28,
+      0.28,
+      1,
+      1
+     ]
+    },
+    {
+     "l": [
+      0.4,
+      0,
+      1.15,
+      0.75
+     ]
+    }
+   ],
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "comutador_escada": {
+   "nome": "Comutador de escada (lustre de 2 lados)",
+   "categoria": "interruptor",
+   "cor": "#000000",
+   "desenho": [
+    {
+     "c": [
+      0,
+      0,
+      0.4
+     ]
+    },
+    {
+     "l": [
+      0.28,
+      0.28,
+      1,
+      1
+     ]
+    },
+    {
+     "l": [
+      -0.28,
+      -0.28,
+      -1,
+      -1
+     ]
+    }
+   ],
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "botao": {
+   "nome": "Botão de pressão (campainha/telerruptor)",
+   "categoria": "interruptor",
+   "cor": "#000000",
+   "desenho": [
+    {
+     "c": [
+      0,
+      0,
+      0.55
+     ]
+    },
+    {
+     "c": [
+      0,
+      0,
+      0.22
+     ]
+    }
+   ],
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "tomada": {
+   "nome": "Tomada 2P+T uso geral",
+   "categoria": "tomada",
+   "cor": "#1f77b4",
+   "desenho": [
+    {
+     "p": [
+      [
+       0.9,
+       -0.3
+      ],
+      [
+       0.831,
+       0.044
+      ],
+      [
+       0.636,
+       0.336
+      ],
+      [
+       0.344,
+       0.531
+      ],
+      [
+       0.0,
+       0.6
+      ],
+      [
+       -0.344,
+       0.531
+      ],
+      [
+       -0.636,
+       0.336
+      ],
+      [
+       -0.831,
+       0.044
+      ],
+      [
+       -0.9,
+       -0.3
+      ]
+     ]
+    },
+    {
+     "l": [
+      -0.9,
+      -0.3,
+      0.9,
+      -0.3
+     ]
+    },
+    {
+     "l": [
+      0,
+      -0.3,
+      0,
+      -1
+     ]
+    }
+   ],
+   "altura": 0.3,
+   "por_uso": {
+    "wc": 1.1,
+    "garagem": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "wc": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+   }
+  },
+  "tomada_bancada": {
+   "nome": "Tomada 2P+T de bancada (cozinha)",
+   "categoria": "tomada",
+   "cor": "#1f77b4",
+   "desenho": [
+    {
+     "p": [
+      [
+       0.9,
+       -0.3
+      ],
+      [
+       0.831,
+       0.044
+      ],
+      [
+       0.636,
+       0.336
+      ],
+      [
+       0.344,
+       0.531
+      ],
+      [
+       0.0,
+       0.6
+      ],
+      [
+       -0.344,
+       0.531
+      ],
+      [
+       -0.636,
+       0.336
+      ],
+      [
+       -0.831,
+       0.044
+      ],
+      [
+       -0.9,
+       -0.3
+      ]
+     ]
+    },
+    {
+     "l": [
+      -0.9,
+      -0.3,
+      0.9,
+      -0.3
+     ]
+    },
+    {
+     "l": [
+      0,
+      -0.3,
+      0,
+      -1
+     ]
+    },
+    {
+     "t": [
+      0.95,
+      0.3,
+      0.7,
+      "B"
+     ]
+    }
+   ],
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "tomada_estanque": {
+   "nome": "Tomada estanque IP44 (exterior/húmidos)",
+   "categoria": "tomada",
+   "cor": "#1f77b4",
+   "desenho": [
+    {
+     "p": [
+      [
+       0.9,
+       -0.3
+      ],
+      [
+       0.831,
+       0.044
+      ],
+      [
+       0.636,
+       0.336
+      ],
+      [
+       0.344,
+       0.531
+      ],
+      [
+       0.0,
+       0.6
+      ],
+      [
+       -0.344,
+       0.531
+      ],
+      [
+       -0.636,
+       0.336
+      ],
+      [
+       -0.831,
+       0.044
+      ],
+      [
+       -0.9,
+       -0.3
+      ]
+     ]
+    },
+    {
+     "l": [
+      -0.9,
+      -0.3,
+      0.9,
+      -0.3
+     ]
+    },
+    {
+     "l": [
+      0,
+      -0.3,
+      0,
+      -1
+     ]
+    },
+    {
+     "t": [
+      0.95,
+      0.3,
+      0.6,
+      "IP"
+     ]
+    }
+   ],
+   "altura": 0.4,
+   "por_uso": {
+    "garagem": 1.1,
+    "wc": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+    "wc": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+   }
+  },
+  "tomada_maquina": {
+   "nome": "Tomada dedicada (máquina lavar roupa/loiça, forno)",
+   "categoria": "dedicado",
+   "cor": "#17becf",
+   "desenho": [
+    {
+     "p": [
+      [
+       0.9,
+       -0.3
+      ],
+      [
+       0.831,
+       0.044
+      ],
+      [
+       0.636,
+       0.336
+      ],
+      [
+       0.344,
+       0.531
+      ],
+      [
+       0.0,
+       0.6
+      ],
+      [
+       -0.344,
+       0.531
+      ],
+      [
+       -0.636,
+       0.336
+      ],
+      [
+       -0.831,
+       0.044
+      ],
+      [
+       -0.9,
+       -0.3
+      ]
+     ]
+    },
+    {
+     "l": [
+      -0.9,
+      -0.3,
+      0.9,
+      -0.3
+     ]
+    },
+    {
+     "l": [
+      0,
+      -0.3,
+      0,
+      -1
+     ]
+    },
+    {
+     "t": [
+      0.95,
+      0.3,
+      0.7,
+      "M"
+     ]
+    }
+   ],
+   "altura": 0.5,
+   "por_uso": {
+    "garagem": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+   }
+  },
+  "tomada_ac": {
+   "nome": "Ligação de ar condicionado (unidade interior)",
+   "categoria": "dedicado",
+   "cor": "#2ca02c",
+   "desenho": [
+    {
+     "p": [
+      [
+       -0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       -0.9
+      ]
+     ]
+    },
+    {
+     "t": [
+      -0.75,
+      -0.35,
+      0.8,
+      "AC"
+     ]
+    }
+   ],
+   "altura": 2.2,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "caixa_ligacao": {
+   "nome": "Caixa de ligação (placa, forno de encastrar)",
+   "categoria": "dedicado",
+   "cor": "#ff7f0e",
+   "desenho": [
+    {
+     "p": [
+      [
+       -0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       -0.9
+      ]
+     ]
+    },
+    {
+     "l": [
+      -0.7,
+      -0.7,
+      0.7,
+      0.7
+     ]
+    },
+    {
+     "l": [
+      -0.7,
+      0.7,
+      0.7,
+      -0.7
+     ]
+    }
+   ],
+   "altura": 0.3,
+   "por_uso": {
+    "garagem": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+   }
+  },
+  "termoacumulador": {
+   "nome": "Ligação de termoacumulador",
+   "categoria": "dedicado",
+   "cor": "#d62728",
+   "desenho": [
+    {
+     "p": [
+      [
+       -0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       -0.9
+      ]
+     ]
+    },
+    {
+     "t": [
+      -0.75,
+      -0.35,
+      0.8,
+      "TA"
+     ]
+    }
+   ],
+   "altura": 1.8,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "rj45": {
+   "nome": "Tomada RJ45 (ITED)",
+   "categoria": "ited",
+   "cor": "#9467bd",
+   "desenho": [
+    {
+     "p": [
+      [
+       -0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       -0.9
+      ]
+     ]
+    },
+    {
+     "t": [
+      -0.4,
+      -0.35,
+      0.9,
+      "D"
+     ]
+    }
+   ],
+   "altura": 0.3,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  },
+  "tv": {
+   "nome": "Tomada TV coaxial (ITED)",
+   "categoria": "ited",
+   "cor": "#9467bd",
+   "desenho": [
+    {
+     "p": [
+      [
+       -0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       -0.9
+      ],
+      [
+       0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       0.9
+      ],
+      [
+       -0.9,
+       -0.9
+      ]
+     ]
+    },
+    {
+     "t": [
+      -0.75,
+      -0.35,
+      0.8,
+      "TV"
+     ]
+    }
+   ],
+   "altura": 0.3,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  }
+ },
+ "preenchimento": {
+  "luz": "luz_teto",
+  "interruptor": "interruptor",
+  "tomada": "tomada",
+  "cozinha_bancada_fracao": 0.5,
+  "equipamento": {
+   "termoacumulador": "termoacumulador",
+   "forno": "caixa_ligacao",
+   "placa": "caixa_ligacao",
+   "avac": "tomada_ac",
+   "maq_lavar": "tomada_maquina",
+   "outro": "caixa_ligacao"
+  },
+  "ited": {
+   "rj45": "rj45",
+   "tv": "tv"
+  }
+ },
+ "historico": [
+  {
+   "versao": 1,
+   "data": "2026-10-13",
+   "autor": "Claude",
+   "alteracao": "tabela inicial",
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  }
+ ]
+}

@@ -24,7 +24,8 @@ table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px}th,td{bord
 th{background:#f6f8fa}.b{border:2px solid #c62828;padding:8px 12px;background:#fff5f5;margin:12px 0}
 .e{font-weight:600}svg{max-width:100%;height:auto;border:1px solid #d0d7de}"""
 
-def relatorio_html(p: Project, r: Resultado) -> str:
+def relatorio_html(p: Project, r: Resultado, cat: dict | None = None) -> str:
+    cat = cat or _cat()
     o = [f"<!doctype html><html lang='pt'><meta charset='utf-8'><title>Memoria de calculo - {h(p.name)}</title><style>{CSS}</style><body>",
          f"<h1>Memória de cálculo — {h(p.name)} (revisão {r.revisao})</h1>",
          "<div class='b'><b>RASCUNHO NÃO ASSINADO.</b> Gerado por software a partir de convenções editáveis e tabelas (edição 2000) por confirmar. "
@@ -50,8 +51,8 @@ def relatorio_html(p: Project, r: Resultado) -> str:
              "".join(f"<tr><td class='e' style='color:{COR_ESTADO.get(v.estado,'#000')}'>{h(v.estado)}</td><td>{h(v.ref)}</td><td>{h(v.texto)}</td></tr>" for v in r.verificacoes) + "</tbody></table>")
     if r.ited:
         o.append("<h2>7. ITED</h2>" + _tab(["Divisão", "RJ45", "TV", "Estado", "Fonte"], [(i, d["rj45"], d["tv"], d["estado"], d["fonte"]) for i, d in r.ited.items()]))
-    o.append("<h2>8. Lista de material</h2>" + _tab(["Categoria", "Descrição", "Qtd", "Un", "Nota"], [(m["categoria"], m["descricao"], m["qtd"], m["un"], m["nota"]) for m in lista_material(r, pontos=p.points, catalogo=_cat())]) +
+    o.append("<h2>8. Lista de material</h2>" + _tab(["Categoria", "Descrição", "Qtd", "Un", "Nota"], [(m["categoria"], m["descricao"], m["qtd"], m["un"], m["nota"]) for m in lista_material(r, pontos=p.points, catalogo=cat)]) +
              "<p>Sem preços. Tubagem, caixas, ATI e bornes não dimensionados.</p>")
-    o.append("<h2>9. Planta com circuitos (" + ("aparelhagem colocada; percursos indicativos" if p.points else "posições indicativas") + ")</h2>" + para_svg(planta(p, r)))
+    o.append("<h2>9. Planta com circuitos (" + ("aparelhagem colocada; percursos indicativos" if p.points else "posições indicativas") + ")</h2>" + para_svg(planta(p, r, catalogo=cat)))
     o.append("<h2>10. Esquema unifilar</h2>" + para_svg(unifilar(r), esp=1.5))
     return "".join(o) + "</body></html>"

@@ -1,7 +1,8 @@
 {
- "id": "simbolos_alturas_v1",
+ "id": "simbolos_alturas",
+ "versao": 1,
  "estatuto": "CONVENCAO",
- "nota": "Alturas ao EIXO da aparelhagem, medidas do pavimento acabado, em metros. Valores HABITUAIS em habitação escolhidos como ponto de partida editável: o RTIEBT (sources/normativas) NÃO fixa alturas gerais para tomadas e interruptores em habitação. Regras com fonte que limitam alturas estão em src/eletro/rules/alturas.py (701.71.2 iluminação de casas de banho; 801.3.5.5 locais com veículos, POR CONFIRMAR em garagem de moradia). Desenhos dos símbolos: próprios, inspirados na simbologia corrente (círculo com X = ponto de luz, semicírculo = tomada), NÃO copiados de norma: confirmar a simbologia exigida pelo formador/entidade.",
+ "nota": "Alturas ao EIXO da aparelhagem, medidas do pavimento acabado, em metros. Valores iniciais HABITUAIS em habitação escolhidos como ponto de partida editável: o RTIEBT (sources/normativas) NÃO fixa alturas gerais para tomadas e interruptores em habitação. Regras com fonte que limitam alturas estão em src/eletro/rules/alturas.py (701.71.2 iluminação de casas de banho; 801.3.5.5 locais com veículos, POR CONFIRMAR em garagem de moradia). Desenhos dos símbolos: próprios, inspirados na simbologia corrente (círculo com X = ponto de luz, semicírculo = tomada), NÃO copiados de norma: confirmar a simbologia exigida pelo formador/entidade. Cada valor tem 'fonte' (altura por defeito) e 'fontes_por_uso' (excecoes). Editar pela app (separador 'Tabela de alturas'): cada alteracao exige fonte, aumenta 'versao' e fica em 'historico'.",
  "tamanho_simbolo_m": 0.16,
  "simbolos": {
   "luz_teto": {
@@ -33,7 +34,8 @@
      ]
     }
    ],
-   "altura": "teto"
+   "altura": "teto",
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "luz_parede": {
    "nome": "Aplique de parede",
@@ -75,6 +77,10 @@
    "altura": 2.0,
    "por_uso": {
     "wc": 2.25
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "wc": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
    }
   },
   "interruptor": {
@@ -98,7 +104,8 @@
      ]
     }
    ],
-   "altura": 1.1
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "comutador_lustre": {
    "nome": "Comutador de lustre (duplo)",
@@ -129,7 +136,8 @@
      ]
     }
    ],
-   "altura": 1.1
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "comutador_escada": {
    "nome": "Comutador de escada (lustre de 2 lados)",
@@ -160,7 +168,8 @@
      ]
     }
    ],
-   "altura": 1.1
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "botao": {
    "nome": "Botão de pressão (campainha/telerruptor)",
@@ -182,7 +191,8 @@
      ]
     }
    ],
-   "altura": 1.1
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "tomada": {
    "nome": "Tomada 2P+T uso geral",
@@ -250,6 +260,11 @@
    "por_uso": {
     "wc": 1.1,
     "garagem": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "wc": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
    }
   },
   "tomada_bancada": {
@@ -322,7 +337,8 @@
      ]
     }
    ],
-   "altura": 1.1
+   "altura": 1.1,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "tomada_estanque": {
    "nome": "Tomada estanque IP44 (exterior/húmidos)",
@@ -398,6 +414,11 @@
    "por_uso": {
     "garagem": 1.1,
     "wc": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+    "wc": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
    }
   },
   "tomada_maquina": {
@@ -473,6 +494,10 @@
    "altura": 0.5,
    "por_uso": {
     "garagem": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
    }
   },
   "tomada_ac": {
@@ -513,7 +538,8 @@
      ]
     }
    ],
-   "altura": 2.2
+   "altura": 2.2,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "caixa_ligacao": {
    "nome": "Caixa de ligação (placa, forno de encastrar)",
@@ -564,6 +590,10 @@
    "altura": 0.3,
    "por_uso": {
     "garagem": 1.1
+   },
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador",
+   "fontes_por_uso": {
+    "garagem": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
    }
   },
   "termoacumulador": {
@@ -604,7 +634,8 @@
      ]
     }
    ],
-   "altura": 1.8
+   "altura": 1.8,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "rj45": {
    "nome": "Tomada RJ45 (ITED)",
@@ -644,7 +675,8 @@
      ]
     }
    ],
-   "altura": 0.3
+   "altura": 0.3,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   },
   "tv": {
    "nome": "Tomada TV coaxial (ITED)",
@@ -684,7 +716,8 @@
      ]
     }
    ],
-   "altura": 0.3
+   "altura": 0.3,
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
   }
  },
  "preenchimento": {
@@ -704,5 +737,14 @@
    "rj45": "rj45",
    "tv": "tv"
   }
- }
+ },
+ "historico": [
+  {
+   "versao": 1,
+   "data": "2026-10-13",
+   "autor": "Claude",
+   "alteracao": "tabela inicial",
+   "fonte": "convencao inicial (Claude, 2026-10-13), por confirmar com o formador"
+  }
+ ]
 }

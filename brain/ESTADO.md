@@ -1,5 +1,5 @@
 # Estado atual
-_Atualizado: 2026-10-14 (tarde; curso começa 19-10-2026)_
+_Atualizado: 2026-10-14 (fim de tarde; curso começa 19-10-2026)_
 
 ## Feito
 - Notas de estudo em 9 blocos cobrindo todas as UC + UFPRA/UFPCT (`study_notes/`). Material de estudo gerado por IA, NÃO normativo.
@@ -35,6 +35,12 @@ README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO"
 - 3.º PDF (projeto de alterações em obra, 23 págs, AutoCAD LT 2023, camadas preservadas). **Pág. 5 = Planta do piso 0 PROPOSTO, 1:100, 03-2024 (LIC.04): o caso de referência.** Tem: `arq_corte` (paredes, 912 segm.), `arq_cotas` (cotas em camada própria → validar escala), nomes das divisões em texto, **quadro de áreas úteis (22 divisões: Hall 1 4.72, …, Sala 47.97, Piscina 28.00 m²)** → validação cruzada, posição do QE e siglas de equipamentos (PF, MO, MLR, MLL). Págs. 15–23 = vermelhos/amarelos; piso -1 só aparece em vermelhos/amarelos (pág. 17).
 - Decisão pendente do Ordep: (a) pedir ao arquiteto o PDF original/DWG; (b) contorno semi-automático com o PDF como fundo + escala 1:50 + snap a vértices de parede + nomes importados; (c) extração automática de divisões (cara: portas abrem os polígonos).
 - **Próximo:** DXF real do arquiteto no separador "DXF do arquiteto" → relatar camadas/unidade/divisões antes de mexer em código. Risco já identificado: acentos em DXF ANSI_1252 (ver [[ARMADILHAS]]). Agentes e orçamento: não nesta fase.
+
+## 2026-10-14 (fim de tarde): tabela de alturas editável na app — FEITO
+O Ordep vai alterar as alturas durante o curso. Por isso:
+- Separador **"Tabela de alturas"**: altura por defeito e exceções por divisão (acrescentar/alterar/remover) para os 15 símbolos; **fonte obrigatória** ("UC, formador, data" / "norma, secção"); gravar cria **versão nova** + linha no **histórico** (data, autor, alteração de→para, fonte). Ficheiro: `data/convencoes/simbolos_alturas.json` (antes `_v1`), no repositório → o Ordep faz commit/push das alterações.
+- Cada ponto guarda `height_ver` (versão da tabela que lhe deu a altura). Se a tabela mudar: AVISO no resultado ("N pontos com altura da tabela antiga") e faixa no editor com **"Reaplicar tabela vN"** (só pontos CONVENCAO; os MANUAL não mudam).
+- Testes usam uma cópia CONGELADA da tabela inicial (`tests/golden/fixtures/simbolos_alturas_ref.json`): as alterações do Ordep não partem os testes; a tabela real só é testada em estrutura (válida, fonte em todos os valores). 77 testes; Chromium: editar 3 valores, recusa sem fonte, gravar v2, aviso de 32 pontos, reaplicar, aviso desaparece (servidor de teste com cópia da tabela; ficheiro real intacto).
 
 ## 2026-10-14: aparelhagem na planta com alturas ao chão — FEITO
 Pedido do Ordep: "só PDF" (DWG fica para depois); colocar na app os símbolos dos componentes elétricos e preencher automaticamente as alturas ao chão.

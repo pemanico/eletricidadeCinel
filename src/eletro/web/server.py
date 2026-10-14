@@ -62,6 +62,7 @@ def fazer_handler(sv: Servico):
             binario = u.path.endswith("/dxf") or u.path.endswith("/pdf")
             d = json.loads(self._body() or "{}") if not binario else None
             if u.path == "/api/projetos": return self._json(sv.criar(d.get("slug", ""), bool(d.get("exemplo"))))
+            if u.path == "/api/simbolos": return self._json(sv.simbolos_alterar(d.get("alteracoes"), d.get("autor", "")))
             m = re.fullmatch(r"/api/p/([^/]+)/(\w+)", u.path)
             if not m: return self._json({"erro": "nao encontrado"}, 404)
             slug, ac = m.groups()
@@ -69,6 +70,7 @@ def fazer_handler(sv: Servico):
             if ac == "guardar": return self._json(sv.guardar(slug, d["project"], d.get("motivo", ""), d.get("autor", "")))
             if ac == "perfil": sv.guardar_perfil(slug, d["perfil"]); return self._json({"ok": True})
             if ac == "dxf": return self._json(sv.dxf_analisar(slug, self._body()))
+            if ac == "reaplicar": return self._json(sv.reaplicar(slug, d["project"], d.get("piso")))
             if ac == "preencher": return self._json(sv.preencher(slug, d["project"], int(d.get("piso", 0)), bool(d.get("so_vazias", True))))
             if ac == "pdf": return self._json(sv.pdf_analisar(slug, self._raw()))
             if ac in ("pdf_detetar", "pdf_importar"):
@@ -82,8 +84,8 @@ def fazer_handler(sv: Servico):
             return self._json({"erro": "nao encontrado"}, 404)
     return H
 
-def servir(porta=8765, pasta=None):
-    srv = ThreadingHTTPServer(("127.0.0.1", porta), fazer_handler(Servico(pasta)))
+def servir(porta=8765, pasta=None, simbolos=None):
+    srv = ThreadingHTTPServer(("127.0.0.1", porta), fazer_handler(Servico(pasta, simbolos)))
     print(f"http://127.0.0.1:{porta}"); return srv
 
 if __name__ == "__main__":
