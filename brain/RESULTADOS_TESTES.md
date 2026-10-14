@@ -1,12 +1,12 @@
 # Resultados dos testes manuais
 Plano: [[PLANO_TESTES]]. Uma linha por passo. Estado: OK / FALHA / DÚVIDA / —(não feito).
 
-## Sessão 1 (por fazer)
-_Data:  · Máquina: PC do Ordep (Windows) · Commit testado: _
+## Sessão 1
+_Data: 2026-10-14 · Máquina: PC do Ordep (Windows, VS Code, PowerShell) · Commit testado: 6619b86_
 
 | Passo | Estado | Observado | Ação (commit / melhoria) |
 |---|---|---|---|
-| 0 Arranque | — | | |
+| 0 Arranque | OK | Commit 6619b86; 83 OK, 0 FALHA; app abre em 127.0.0.1:8765 sem traceback. Visto pelo Claude: aviso pypdfium2 "PdfDocument still open" no fim dos testes (pdfread.py abre o PDF e não fecha) | ver passo 2 |
 | 1 Exemplo T3 | — | | |
 | 2 PDF → divisões | — | | |
 | 3 Quadro | — | | |
