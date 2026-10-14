@@ -1,4 +1,5 @@
 """Runner sem dependencias (pytest nao disponivel em todos os ambientes). Uso: python run_tests.py"""
+import deps_check  # noqa: F401  (mensagem clara se faltar o venv/dependencias)
 import sys, glob, importlib.util, os
 sys.path.insert(0, "src"); sys.path.insert(0, "tests/golden")
 fails = 0

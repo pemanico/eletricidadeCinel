@@ -12,8 +12,8 @@ _Criado: 2026-10-14. Usar com `/testar` num chat novo. Resultados em [[RESULTADO
 
 ### 0. Arranque
 1. `git pull` na pasta `E:\Cinel\projectAI\eletricidadeCinel`.
-2. `pip install -r requirements.txt` (no venv). Novas desde 13-10: pikepdf, pdfplumber, pypdfium2, numpy, scipy.
-3. `python run_tests.py` → **esperado: 81 OK**, nenhuma FALHA.
+2. Ativar o venv (`.\.venv\Scripts\Activate.ps1`; o prompt passa a começar por `(.venv)`) e `pip install -r requirements.txt`. Novas desde 13-10: pikepdf, pdfplumber, pypdfium2, numpy, scipy.
+3. `python run_tests.py` → **esperado: 83 OK**, nenhuma FALHA.
 4. `python run_app.py` → abre http://127.0.0.1:8765, sem erros na consola do terminal.
 
 ### 1. Exemplo T3 (sanidade)
