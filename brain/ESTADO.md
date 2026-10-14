@@ -36,6 +36,9 @@ README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO"
 - Decisão pendente do Ordep: (a) pedir ao arquiteto o PDF original/DWG; (b) contorno semi-automático com o PDF como fundo + escala 1:50 + snap a vértices de parede + nomes importados; (c) extração automática de divisões (cara: portas abrem os polígonos).
 - **Próximo:** DXF real do arquiteto no separador "DXF do arquiteto" → relatar camadas/unidade/divisões antes de mexer em código. Risco já identificado: acentos em DXF ANSI_1252 (ver [[ARMADILHAS]]). Agentes e orçamento: não nesta fase.
 
+## PRÓXIMO (a partir de 2026-10-14): sessão de testes guiados
+Chat novo com `/testar`: segue `brain/PLANO_TESTES.md` (passos 0–9), um passo de cada vez no PC do Ordep, resultados em `brain/RESULTADOS_TESTES.md`. Sem funcionalidades novas durante os testes; bugs pequenos corrigidos com teste; o resto vai para "Melhorias pedidas". Depois: dividir divisões fundidas.
+
 ## 2026-10-14 (noite): cálculos ponto a ponto + quadro — FEITO
 Pedido do Ordep: cálculos de todas as tomadas/pontos de luz e dimensionamento do quadro. O motor já calculava circuitos e quadro; faltava ligar à aparelhagem colocada.
 - Divisões com aparelhagem colocada: cada ponto de luz/tomada pertence a um circuito. Automático = por proximidade ao quadro (cadeia de vizinho mais próximo, máx. 8 pontos, 801.5.3); ou **escolhido à mão** no editor (campo "Circuito", ex. TOM-COZ; >8 dá NAO_CUMPRE; misturar luz e tomadas dá AVISO). Divisões sem pontos continuam pela convenção.

@@ -8,6 +8,7 @@ Fonte única de verdade para qualquer chat novo (Claude Code, claude.ai, ou tu).
 4. [[PROGRESSO_UC]] — UC dadas, módulos de software ligados
 5. [[ARMADILHAS]] — erros já cometidos e limitações do ambiente
 6. [[GLOSSARIO]] — termos e siglas
+7. [[PLANO_TESTES]] e [[RESULTADOS_TESTES]] — teste manual guiado da app (comando `/testar`)
 Contexto técnico: `README.md`, `ROADMAP.md`, `docs/PLANO_PROJETO.md`, `docs/AGENTES.md`, `CLAUDE.md`.
 
 ## Quem és tu e como trabalhamos
@@ -18,4 +19,4 @@ Contexto técnico: `README.md`, `ROADMAP.md`, `docs/PLANO_PROJETO.md`, `docs/AGE
 
 ## Regra de manutenção
 **Instrução permanente do Ordep: o Claude atualiza o cérebro sempre que for preciso, sem pedir autorização** (estado, decisões, dúvidas, progresso, armadilhas), com commit e push. O Ordep não tem de lembrar.
-No fim de cada sessão: atualizar [[ESTADO]] (e [[DECISOES]]/[[DUVIDAS_ABERTAS]] se mudaram), fazer commit. Comando: `/handoff`. No início: `/retomar`.
+No fim de cada sessão: atualizar [[ESTADO]] (e [[DECISOES]]/[[DUVIDAS_ABERTAS]] se mudaram), fazer commit. Comando: `/handoff`. No início: `/retomar` (ou `/testar` para a sessão de testes guiados).
