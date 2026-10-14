@@ -35,6 +35,12 @@ def _abrir(dados: bytes):
     except Exception as e:
         raise PdfError(f"PDF ilegivel: {type(e).__name__}") from e
 
+def _fechar(pk, pl, doc):
+    """Fecha os tres leitores (sem isto o pypdfium2 deixa documentos abertos e a app acumula memoria a cada PDF)."""
+    for o in (pk, pl, doc):
+        try: o.close()
+        except Exception: pass
+
 def _texto(doc, i: int) -> str:
     return doc[i].get_textpage().get_text_range().replace("\r\n", "\n").replace("\r", "\n")
 
@@ -131,6 +137,10 @@ _RX_VAOS = re.compile(r"vista|caixil|vao|vão|janela|porta|window|door", re.I)
 
 def analisar(dados: bytes) -> dict:
     pk, pl, doc = _abrir(dados)
+    try: return _analisar(pk, pl, doc)
+    finally: _fechar(pk, pl, doc)
+
+def _analisar(pk, pl, doc) -> dict:
     paginas, avisos = [], []
     for i, pg in enumerate(pk.pages):
         texto = _texto(doc, i)
@@ -165,6 +175,10 @@ def extrair(dados: bytes, pagina: int, camadas_paredes: list[str], escala: float
     """Geometria da pagina em metros (origem no canto inferior esquerdo das paredes).
     camadas_vaos: camada(s) com caixilharia/aros (ex. vistas), usadas so para fechar vaos."""
     pk, pl, doc = _abrir(dados)
+    try: return _extrair(pk, pl, doc, pagina, camadas_paredes, escala, camadas_vaos)
+    finally: _fechar(pk, pl, doc)
+
+def _extrair(pk, pl, doc, pagina, camadas_paredes, escala, camadas_vaos) -> dict:
     if not (1 <= pagina <= len(pk.pages)):
         raise PdfError(f"pagina {pagina} nao existe (o PDF tem {len(pk.pages)})")
     if not (escala and escala > 0):

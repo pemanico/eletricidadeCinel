@@ -128,3 +128,25 @@ def test_projeto_novo_grava_todos_os_campos():
     with tempfile.TemporaryDirectory() as tmp:
         sv = Servico(tmp); p = sv.criar("novo")["project"]
         assert p["equipment"] == [] and p["openings"] == [] and p["rooms"] == []
+
+def test_servico_pdf_importar_recusa_escala_errada():
+    """Teste manual 14-10, passo 2.5: com a escala errada a detecao da erro, mas o Importar deixava passar areas x4."""
+    from eletro.web.service import Erro
+    with tempfile.TemporaryDirectory() as tmp:
+        sv = Servico(tmp); sv.criar("casa"); sv.pdf_analisar("casa", arq_pdf.pdf())
+        try:
+            sv.pdf_importar("casa", 1, ["PAREDES"], ["VISTA"], 100); assert False, "devia recusar"
+        except Erro as e:
+            assert "1:50" in str(e), e
+        assert sv.pdf_importar("casa", 1, ["PAREDES"], ["VISTA"], 50)["divisoes"]
+
+def test_pdf_leitores_ficam_fechados():
+    """Teste manual 14-10, passo 0: aviso 'PdfDocument still open' -> a app acumulava PDFs abertos."""
+    fechados = []
+    orig = pdfread._fechar
+    pdfread._fechar = lambda *a: (fechados.append(1), orig(*a))
+    try:
+        pdfread.analisar(arq_pdf.pdf()); pdfread.extrair(arq_pdf.pdf(), 1, ["PAREDES"], 50, ["VISTA"])
+    finally:
+        pdfread._fechar = orig
+    assert len(fechados) == 2

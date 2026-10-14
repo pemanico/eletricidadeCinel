@@ -13,7 +13,7 @@ _Criado: 2026-10-14. Usar com `/testar` num chat novo. Resultados em [[RESULTADO
 ### 0. Arranque
 1. `git pull` na pasta `E:\Cinel\projectAI\eletricidadeCinel`.
 2. Ativar o venv (`.\.venv\Scripts\Activate.ps1`; o prompt passa a começar por `(.venv)`) e `pip install -r requirements.txt`. Novas desde 13-10: pikepdf, pdfplumber, pypdfium2, numpy, scipy.
-3. `python run_tests.py` → **esperado: 83 OK**, nenhuma FALHA.
+3. `python run_tests.py` → **esperado: 85 OK** (83 até 14-10; +2 da sessão de testes 1), nenhuma FALHA.
 4. `python run_app.py` → abre http://127.0.0.1:8765, sem erros na consola do terminal.
 
 ### 1. Exemplo T3 (sanidade)
@@ -27,7 +27,7 @@ _Criado: 2026-10-14. Usar com `/testar` num chat novo. Resultados em [[RESULTADO
 2. Paredes = `arq_corte`, Caixilhos = `arq_vista 1`, escala 100, piso 0 (já preenchidos). **Detetar**.
 3. Esperado: 13 divisões fechadas; **6 de 11 a ±3%** (Garagem, Escritório, Lavandaria, Quarto 1, Quarto 2, IS.1); escala **confirmada**; erros: sala/cozinha/halls fundidos, Quarto 3+Closet fundidos, IS.2/IS.3/IS.4 abaixo do quadro; alpendres "não fechado". Pré-visualização colorida.
 4. **Importar**. Divisões: 13 linhas, todas por confirmar.
-5. Teste de erro: escala 50 → Detetar → deve dar erro de escala e sugerir 1:100. Voltar a 100.
+5. Teste de erro: escala 50 → Detetar → deve dar erro de escala e sugerir 1:100. **Importar** com 50 → recusa ("escala 1:50 errada… sugerida 1:100"). Voltar a 100.
 
 ### 3. Quadro
 1. Alimentação/quadro ou paleta "QE" no editor: pôr o quadro no **Hall 1** (onde o arquiteto marcou QE).

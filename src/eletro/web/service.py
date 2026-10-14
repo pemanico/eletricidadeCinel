@@ -254,6 +254,9 @@ class Servico:
         from ..cad import divisoes
         e, r, piso = self._pdf_detetar(slug, pagina, camadas_paredes, camadas_vaos, escala, piso)
         if not r["divisoes"]: raise Erro("nenhuma divisao fechada detetada: nada para importar (ver avisos)")
+        esc = r.get("escala") or {}
+        if esc.get("escala_sugerida"):   # areas todas fora pelo mesmo fator: importar daria areas/comprimentos errados
+            raise Erro(f"escala 1:{float(escala):g} errada (as areas nao batem com o quadro; sugerida 1:{esc['escala_sugerida']}): corrigir a escala e detetar de novo")
         d = Dxf({"ARQ-PAREDES": 8, "ARQ-VAOS": 9})
         for a, b in e["segmentos"]: d.line("ARQ-PAREDES", a, b)
         for a, b in divisoes.filtrar_vaos(e["segmentos"], e["aux"]): d.line("ARQ-VAOS", a, b)
