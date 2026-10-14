@@ -18,4 +18,4 @@ _Data: 2026-10-14 · Máquina: PC do Ordep (Windows, VS Code, PowerShell) · Com
 | 9 Robustez | — | | |
 
 ## Melhorias pedidas durante os testes (não implementar na sessão de testes)
-- 
+- **Botão "Novo" pouco visível** (passo 2): o Ordep não o encontrou na barra de cima; está entre a lista pendente e "Exemplo T3", com o mesmo estilo dos outros. Sugestão: rótulo "+ Novo projeto", destacado; e trocar o `prompt()` do browser por um campo na própria página (o `prompt()` pode ser bloqueado pelo browser e não valida o identificador antes de enviar).
