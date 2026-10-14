@@ -150,3 +150,20 @@ def test_pdf_leitores_ficam_fechados():
     finally:
         pdfread._fechar = orig
     assert len(fechados) == 2
+
+def test_escala_sugerida_prefere_escala_usual_que_bate_com_o_quadro():
+    """Teste manual 14-10, passo 2.5: planta 1:100 lida a 1:50 -> a app sugeria 1:116 (mediana puxada pelas divisoes
+    fundidas). Razoes a 1:50: 3 divisoes certas (0.25 = 1/4) + fundidas/incompletas que enviesam a mediana."""
+    razoes = [0.25, 0.251, 0.249, 0.12, 0.13, 0.15, 0.16, 0.6, 0.9]
+    assert divisoes.sugerir_escala(razoes, 50) == 100
+    # nenhuma escala usual serve -> estimativa pela mediana (comportamento anterior)
+    assert round(divisoes.sugerir_escala([0.5, 0.52, 0.55], 50)) == round(50 / 0.52 ** 0.5)
+
+def test_pdf_planta_real_lida_a_1_50_sugere_1_100():
+    """Regressao do teste manual 14-10 (passo 2.5): a planta real (1:100) lida a 1:50 sugeria 1:116."""
+    fx = json.loads(FIX.read_text(encoding="utf-8"))
+    h = lambda p: [x * 0.5 for x in p]                       # a 1:50 o desenho mede metade
+    t = lambda ss: [tuple(tuple(h(p)) for p in s) for s in ss]
+    pal = [{**w, "pos": h(w["pos"])} for w in fx["palavras"]]
+    r = divisoes.detetar(t(fx["segmentos"]), pal, fx["quadro_areas"], 0, 50, aux=t(fx["aux"]))
+    assert not r["escala"]["validada"] and r["escala"]["escala_sugerida"] == 100, r["escala"]

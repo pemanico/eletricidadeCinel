@@ -17,6 +17,20 @@ from .dxfread import uso_por_nome
 
 RES = 0.02          # m por pixel
 TOL_OK, TOL_AVISO = 0.03, 0.08   # diferenca relativa de area: <=3% ok, <=8% aviso, >8% erro
+ESCALAS_NORMAIS = (20, 25, 50, 75, 100, 125, 150, 200, 250, 500, 1000)   # escalas usuais de desenho de arquitetura
+
+def sugerir_escala(razoes: list[float], escala: float) -> float:
+    """Escala sugerida quando as areas nao batem com o quadro. razoes = area_calculada / area_quadro a 1:escala.
+    A area escala com o quadrado da escala: a 1:s, razao_s = razao * (s/escala)^2. Primeiro tenta as escalas
+    usuais e escolhe a que poe mais divisoes a +-3% (>=2); so se nenhuma servir devolve a estimativa pela mediana.
+    (Teste manual 14-10: divisoes fundidas puxavam a mediana e a app sugeria 1:116 em vez de 1:100.)"""
+    melhor, n_melhor = None, 1
+    for s_ in ESCALAS_NORMAIS:
+        if s_ == escala: continue
+        k = (s_ / escala) ** 2
+        n = sum(1 for r in razoes if abs(r * k - 1) <= TOL_OK)
+        if n > n_melhor: melhor, n_melhor = s_, n
+    return melhor if melhor else escala / math.sqrt(statistics.median(razoes))
 
 def _norm(t: str) -> str:
     return unicodedata.normalize("NFKD", t.lower()).encode("ascii", "ignore").decode().replace(" ", "")
@@ -426,7 +440,7 @@ def detetar(segs, palavras, quadro: dict[str, float] | None = None, piso: int = 
         if boas >= 2:
             pass                         # >=2 divisoes batem com o quadro a 3%: escala confirmada
         elif abs(med - 1) > TOL_OK and escala:
-            sug = escala / math.sqrt(med)
+            sug = sugerir_escala(razoes, escala)
             esc_info["escala_sugerida"] = round(sug)
             A("erro", f"as areas diferem todas ~{(med - 1) * 100:+.0f}% do quadro: a escala 1:{escala:g} parece errada (1:{sug:.0f}?)")
     elif len(razoes) == 1 and escala and not 0.67 < razoes[0] < 1.5:
