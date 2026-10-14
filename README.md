@@ -10,6 +10,7 @@ Software para apoiar o projeto de instalações elétricas de **moradias** (RTIE
 - **Estados por linha de verificação:** `CUMPRE`, `NAO_CUMPRE`, `CONVENCAO`, `POR_CONFIRMAR`, `AVISO`.
 - **Dados de PDF/foto entram `confirmed=False`**; nada segue sem confirmação humana.
 - A planta de base é o **DXF do arquiteto** (ASCII; DWG não é lido) ou o **PDF do arquiteto** (vetorial, plotado do CAD com camadas): escolhe-se a página/piso, a camada das paredes e a dos caixilhos; as divisões são detetadas a partir das paredes e validadas contra o quadro de áreas do arquiteto (avisos e erros na app). Instalar `pip install -r requirements.txt`.
+- **Aparelhagem na planta**: separador "Aparelhagem (planta)" com paleta de símbolos; alturas ao chão preenchidas pela convenção (`data/convencoes/simbolos_alturas_v1.json`, editável) e verificadas contra RTIEBT 701.71.2 / 801.3.5.5; o cálculo usa a aparelhagem colocada.
 
 ## Pipeline
 planta (DXF / JSON / PDF / foto) → `Project` → regras + cálculo (`engine.calcular`) → quadro, circuitos, ITED → unifilar, planta+circuitos (SVG/DXF), material, relatório HTML.

@@ -1,7 +1,7 @@
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false, pdf: null, pdfSel: null, pdfDet: null};
-const TABS = [["divisoes", "Divisões"], ["equip", "Equipamentos"], ["alim", "Alimentação / quadro"], ["conv", "Convenção"], ["res", "Resultado"],
+const S = {slug: null, P: null, perfil: null, R: null, tab: "divisoes", sujo: false, dxfInfo: null, painelModo: false, pdf: null, pdfSel: null, pdfDet: null, cat: null, ap: {piso: 0, sel: null, pal: null, vb: null, fundo: {}, alturas: true}};
+const TABS = [["divisoes", "Divisões"], ["apar", "Aparelhagem (planta)"], ["equip", "Equipamentos"], ["alim", "Alimentação / quadro"], ["conv", "Convenção"], ["res", "Resultado"],
   ["planta", "Planta + circuitos"], ["unif", "Unifilar"], ["mat", "Material"], ["rev", "Revisões"], ["dxf", "DXF do arquiteto"], ["pdf", "PDF do arquiteto"], ["exp", "Exportar"]];
 const msg = (t, err) => { const m = $("#msg"); m.textContent = t; m.className = err ? "err" : ""; };
 async function api(url, body, raw) {
@@ -30,7 +30,7 @@ function render() {
   $("#tabs").innerHTML = TABS.map(([k, n]) => `<button class="${k === S.tab ? "on" : ""}" data-t="${k}">${n}</button>`).join("");
   $("#tabs").querySelectorAll("button").forEach(b => b.onclick = () => { S.tab = b.dataset.t; render(); });
   if (!S.P) { $("#main").innerHTML = "<p>Crie ou escolha um projeto.</p>"; return; }
-  const f = V[S.tab]; $("#main").innerHTML = ""; f($("#main"));
+  const f = V[S.tab]; $("#main").innerHTML = ""; const pr = f($("#main")); if (pr && pr.catch) pr.catch(e => msg(e.message, true));
 }
 const polyTxt = p => (p || []).map(q => q.join(",")).join(" ; ");
 function polyParse(t) { return t.split(";").map(s => s.trim()).filter(Boolean).map(s => s.split(",").map(Number)); }
@@ -140,7 +140,7 @@ V.dxf = m => {
   $("#f").onchange = async ev => { try { const t = await ev.target.files[0].text(); S.dxfInfo = await api(`/api/p/${S.slug}/dxf`, t, true); msg("DXF lido"); render(); } catch (e) { msg(e.message, true); } };
   if (i) $("#imp").onclick = async () => { try {
     const r = await api(`/api/p/${S.slug}/importar`, {camada: $("#cam").value, unit_m: +$("#un").value});
-    S.P.rooms = r.divisoes; S.P.openings = r.aberturas; S.P.base = r.base;
+    S.P.rooms = r.divisoes; S.P.openings = r.aberturas; S.P.base = r.base; S.P.points = []; S.ap.fundo = {};
     S.P.equipment = (S.P.equipment || []).filter(e => r.divisoes.some(d => d.id === e.room_id));
     if (!S.P.panel || !r.divisoes.some(d => d.id === S.P.panel.room_id)) S.P.panel = r.divisoes.length ? {room_id: r.divisoes[0].id, pos: r.divisoes[0].polygon[0]} : null;
     msg(r.avisos.join(" | ") || `${r.divisoes.length} divisões importadas`); marcar(); S.tab = "divisoes"; render(); } catch (e) { msg(e.message, true); } };
@@ -179,8 +179,138 @@ V.pdf = m => {
     S.P.rooms = fora.concat(x.divisoes);
     S.P.openings = (S.P.openings || []).filter(o => ids.has(o.room_id) && !novos.has(o.room_id)).concat(x.aberturas);
     S.P.equipment = (S.P.equipment || []).filter(e => ids.has(e.room_id)); S.P.base = x.base;
+    S.P.points = (S.P.points || []).filter(q => ids.has(q.room_id) && !novos.has(q.room_id)); S.ap.fundo = {}; S.ap.piso = x.piso;
     if (!S.P.panel || !ids.has(S.P.panel.room_id)) S.P.panel = S.P.rooms.length ? {room_id: S.P.rooms[0].id, pos: S.P.rooms[0].polygon[0]} : null;
     msg(`${x.divisoes.length} divisões importadas no piso ${x.piso} (por confirmar). Guarde para criar revisão.`); marcar(); S.tab = "divisoes"; render(); } catch (e) { msg(e.message, true); } };
+};
+// ---------- Aparelhagem colocada na planta (editor) ----------
+const dentro = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j];
+  if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; };
+const pisos = () => [...new Set(S.P.rooms.map(r => r.floor ?? 0))].sort((a, b) => b - a);
+const alturaDef = (kind, room) => { const s = S.cat.simbolos[kind]; if (!s) return null; const h = (s.por_uso || {})[room.use] ?? s.altura; return h === "teto" ? null : h; };
+const fmtH = (q, room) => q.height_m == null ? `teto (${room ? room.height_m : "?"} m)` : q.height_m.toFixed(2) + " m";
+function simboloSVG(kind, x, y, k, extra = "") {
+  const s = S.cat.simbolos[kind]; if (!s) return `<text x="${x}" y="${-y}" font-size="${k}" fill="red">?</text>`;
+  const sw = (k * 0.14).toFixed(4), c = s.cor;
+  const el = s.desenho.map(e => e.c ? `<circle cx="${x + e.c[0] * k}" cy="${-(y + e.c[1] * k)}" r="${e.c[2] * k}" fill="none" stroke="${c}" stroke-width="${sw}"/>`
+    : e.l ? `<line x1="${x + e.l[0] * k}" y1="${-(y + e.l[1] * k)}" x2="${x + e.l[2] * k}" y2="${-(y + e.l[3] * k)}" stroke="${c}" stroke-width="${sw}"/>`
+    : e.p ? `<polyline points="${e.p.map(([a, b]) => `${x + a * k},${-(y + b * k)}`).join(" ")}" fill="none" stroke="${c}" stroke-width="${sw}"/>`
+    : `<text x="${x + e.t[0] * k}" y="${-(y + e.t[1] * k)}" font-size="${e.t[2] * k}" fill="${c}" font-family="sans-serif">${esc(e.t[3])}</text>`).join("");
+  return `<g ${extra}><rect x="${x - 1.2 * k}" y="${-y - 1.2 * k}" width="${2.4 * k}" height="${2.4 * k}" fill="transparent"/>${el}</g>`;
+}
+function iconePal(kind) { return `<svg viewBox="-1.6 -1.6 3.2 3.2" width="26" height="26">${simboloSVG(kind, 0, 0, 1)}</svg>`; }
+async function garantirFundo(piso) {
+  if (S.ap.fundo[piso] === undefined) { try { S.ap.fundo[piso] = (await api(`/api/p/${S.slug}/fundo?piso=${piso}`)).segmentos; } catch (e) { S.ap.fundo[piso] = []; } }
+}
+V.apar = async m => {
+  if (!S.cat) S.cat = await api("/api/simbolos");
+  S.P.points = S.P.points || [];
+  const ps = pisos(); if (!ps.includes(S.ap.piso)) S.ap.piso = ps.length ? ps[ps.length > 1 && ps.includes(0) ? ps.indexOf(0) : 0] : 0;
+  await garantirFundo(S.ap.piso);
+  const kinds = Object.keys(S.cat.simbolos), A = S.ap;
+  m.innerHTML = `<div class=row><label>Piso <select id=apiso>${ps.map(f => `<option value=${f} ${f === A.piso ? "selected" : ""}>${f}</option>`).join("")}</select></label>
+    <button class=p id=apre>Preencher pela convenção (divisões vazias)</button>
+    <label><input type=checkbox id=asub> substituir o que está no piso</label>
+    <label><input type=checkbox id=aalt ${A.alturas ? "checked" : ""}> mostrar alturas</label>
+    <button id=afit>Ajustar vista</button><span class=mut>Roda do rato = zoom · arrastar o fundo = mover · Del = apagar · Esc = largar</span></div>
+  <div style="display:grid;grid-template-columns:230px 1fr 260px;gap:10px;align-items:start">
+    <div id=apal style="max-height:72vh;overflow:auto"><p class=mut style="margin:0 0 4px">Clique num símbolo e depois na planta. A altura é preenchida pela convenção (editável).</p>
+      ${kinds.map(k => { const s = S.cat.simbolos[k]; return `<button data-k="${k}" title="${esc(s.nome)}" style="display:flex;gap:6px;align-items:center;width:100%;text-align:left;margin:2px 0;${A.pal === k ? "outline:2px solid var(--ac)" : ""}">${iconePal(k)}<span style="flex:1">${esc(s.nome)}<br><span class=mut>${s.altura === "teto" ? "teto" : s.altura.toFixed(2) + " m"}${s.por_uso ? " *" : ""}</span></span></button>`; }).join("")}
+      <button data-k="__QE" style="width:100%;margin-top:6px;${A.pal === "__QE" ? "outline:2px solid var(--ac)" : ""}">▭ Quadro elétrico (QE)</button>
+      <p class=mut>* altura diferente em algumas divisões (WC, garagem, cozinha). Fonte: ${esc(S.cat.id)} — CONVENÇÃO, não norma.</p></div>
+    <div class=svgbox style="padding:0"><svg id=apsvg style="width:100%;height:72vh;touch-action:none;background:#fff;display:block"></svg></div>
+    <div id=apdet></div></div>
+  <h3>Aparelhagem do piso ${A.piso}</h3><div id=aptab></div>`;
+  const svg = $("#apsvg");
+  const salasPiso = () => S.P.rooms.filter(r => (r.floor ?? 0) === A.piso && r.polygon && r.polygon.length > 2);
+  const salaEm = pt => salasPiso().find(r => dentro(pt, r.polygon));
+  const limites = () => { const pts = salasPiso().flatMap(r => r.polygon).concat((S.ap.fundo[A.piso] || []).flat()); if (!pts.length) return [0, -10, 10, 10];
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); const x0 = Math.min(...xs) - .5, x1 = Math.max(...xs) + .5, y0 = Math.min(...ys) - .5, y1 = Math.max(...ys) + .5; return [x0, -y1, x1 - x0, y1 - y0]; };
+  if (!A.vb || A.vbPiso !== A.piso) { A.vb = limites(); A.vbPiso = A.piso; }
+  const kSimb = () => Math.max(S.cat.tamanho_simbolo_m, A.vb[2] / Math.max(svg.clientWidth, 300) * 9);
+  function desenhar() {
+    svg.setAttribute("viewBox", A.vb.join(" "));
+    const sw = A.vb[2] / Math.max(svg.clientWidth, 300), k = kSimb(), rooms = Object.fromEntries(S.P.rooms.map(r => [r.id, r]));
+    let h = (S.ap.fundo[A.piso] || []).map(([a, b]) => `<line x1="${a[0]}" y1="${-a[1]}" x2="${b[0]}" y2="${-b[1]}" stroke="#999" stroke-width="${sw * 1.2}"/>`).join("");
+    h += salasPiso().map(r => { const cx = r.polygon.reduce((s, p) => s + p[0], 0) / r.polygon.length, cy = r.polygon.reduce((s, p) => s + p[1], 0) / r.polygon.length;
+      return `<polygon points="${r.polygon.map(p => `${p[0]},${-p[1]}`).join(" ")}" fill="${r.confirmed ? "#e8f3ec" : "#f6f1e3"}" fill-opacity=".55" stroke="#bbb" stroke-width="${sw}"/>
+        <text x="${cx}" y="${-cy}" font-size="${sw * 11}" fill="#888" text-anchor="middle" font-family="sans-serif">${esc(r.name)}</text>`; }).join("");
+    if (S.P.panel && rooms[S.P.panel.room_id] && (rooms[S.P.panel.room_id].floor ?? 0) === A.piso) { const [x, y] = S.P.panel.pos;
+      h += `<rect x="${x - 2 * k}" y="${-y - k}" width="${4 * k}" height="${2 * k}" fill="#fff" stroke="#d62728" stroke-width="${k * .15}"/><text x="${x - 1.4 * k}" y="${-y + .5 * k}" font-size="${1.3 * k}" fill="#d62728" font-family="sans-serif">QE</text>`; }
+    for (const q of S.P.points) { const r = rooms[q.room_id]; if (!r || (r.floor ?? 0) !== A.piso) continue;
+      h += simboloSVG(q.kind, q.pos[0], q.pos[1], k, `data-q="${q.id}" style="cursor:move"`);
+      if (q.id === A.sel) h += `<circle cx="${q.pos[0]}" cy="${-q.pos[1]}" r="${1.6 * k}" fill="none" stroke="#0969da" stroke-width="${k * .2}" stroke-dasharray="${k * .4}"/>`;
+      if (A.alturas && !(q.kind === "luz_teto" && q.height_m == null)) { const hh = q.height_m == null ? "teto" : q.height_m.toFixed(2); h += `<text x="${q.pos[0] + 1.2 * k}" y="${-q.pos[1] + 1.6 * k}" font-size="${k * .95}" fill="${q.height_origem === "MANUAL" ? "#9a6700" : "#666"}" font-family="sans-serif">${hh}</text>`; } }
+    svg.innerHTML = h; svg.style.cursor = A.pal ? "crosshair" : "grab";
+  }
+  function detalhe() {
+    const q = S.P.points.find(x => x.id === A.sel), d = $("#apdet");
+    if (!q) { d.innerHTML = `<p class=mut>${A.pal ? `A colocar: <b>${esc(A.pal === "__QE" ? "Quadro elétrico" : S.cat.simbolos[A.pal].nome)}</b>. Clique na planta.` : "Selecione um símbolo na planta para editar."}</p>`; return; }
+    const r = S.P.rooms.find(x => x.id === q.room_id), def = alturaDef(q.kind, r);
+    d.innerHTML = `<h3 style="margin-top:0">${esc(q.id)}</h3><p>Divisão: <b>${esc(r ? r.name : q.room_id)}</b> (${esc(r ? r.use : "")})</p>
+      <label>Tipo <select id=dk>${kinds.map(k => `<option value="${k}" ${k === q.kind ? "selected" : ""}>${esc(S.cat.simbolos[k].nome)}</option>`).join("")}</select></label>
+      <p><label>Altura ao eixo (m) <input type=number step=0.05 min=0 id=dh value="${q.height_m ?? ""}" placeholder="teto"></label><br>
+      <span class=mut>Convenção: ${def == null ? "teto" : def.toFixed(2) + " m"} · origem: <b class="${q.height_origem === "MANUAL" ? "CONVENCAO" : ""}">${q.height_origem}</b></span></p>
+      <p><label>x <input type=number step=0.05 id=dx value="${q.pos[0]}"></label> <label>y <input type=number step=0.05 id=dy value="${q.pos[1]}"></label></p>
+      <p><label>Nota <input id=dn value="${esc(q.note || "")}" style="width:100%"></label></p>
+      <div class=row><button id=drep>Repor altura da convenção</button><button id=ddel class=err>Apagar</button></div>`;
+    $("#dk").onchange = e => { q.kind = e.target.value; if (q.height_origem === "CONVENCAO") q.height_m = alturaDef(q.kind, r); mudou(); };
+    $("#dh").onchange = e => { q.height_m = e.target.value === "" ? null : Math.round(+e.target.value * 100) / 100; q.height_origem = "MANUAL"; mudou(); };
+    $("#dx").onchange = $("#dy").onchange = () => { mover(q, [+$("#dx").value, +$("#dy").value]); mudou(); };
+    $("#dn").onchange = e => { q.note = e.target.value; marcar(); };
+    $("#drep").onclick = () => { q.height_m = def; q.height_origem = "CONVENCAO"; mudou(); };
+    $("#ddel").onclick = () => apagar(q.id);
+  }
+  function tabela() {
+    const rooms = Object.fromEntries(S.P.rooms.map(r => [r.id, r]));
+    const qs = S.P.points.filter(q => rooms[q.room_id] && (rooms[q.room_id].floor ?? 0) === A.piso);
+    $("#aptab").innerHTML = qs.length ? `<table><tr><th>id</th><th>Divisão</th><th>Tipo</th><th>Altura</th><th>Origem</th><th>Nota</th></tr>${qs.map(q => `<tr data-r="${q.id}" style="cursor:pointer;${q.id === A.sel ? "background:var(--bg2)" : ""}"><td>${esc(q.id)}</td><td>${esc(rooms[q.room_id].name)}</td><td>${esc(S.cat.simbolos[q.kind]?.nome || q.kind)}</td><td>${fmtH(q, rooms[q.room_id])}</td><td class="${q.height_origem === "MANUAL" ? "CONVENCAO" : "mut"}">${q.height_origem}</td><td>${esc(q.note || "")}</td></tr>`).join("")}</table>`
+      : `<p class=mut>Sem aparelhagem neste piso: o cálculo usa a convenção (contagens por área). Use "Preencher pela convenção" para começar e depois ajuste.</p>`;
+    $("#aptab").querySelectorAll("[data-r]").forEach(tr => tr.onclick = () => { A.sel = tr.dataset.r; tudo(); });
+  }
+  const tudo = () => { desenhar(); detalhe(); tabela(); };
+  const mudou = () => { marcar(); tudo(); };
+  function mover(q, pt) {
+    const r = salaEm(pt);
+    if (!r) { msg("fora de qualquer divisão deste piso: posição não alterada", true); return false; }
+    q.pos = [Math.round(pt[0] * 100) / 100, Math.round(pt[1] * 100) / 100];
+    if (r.id !== q.room_id) { q.room_id = r.id; if (q.height_origem === "CONVENCAO") q.height_m = alturaDef(q.kind, r); }
+    return true;
+  }
+  function apagar(id) { S.P.points = S.P.points.filter(x => x.id !== id); if (A.sel === id) A.sel = null; mudou(); }
+  const novoId = () => { const u = new Set(S.P.points.map(q => q.id)); let i = 1; while (u.has("q" + i)) i++; return "q" + i; };
+  const pt = ev => { const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const t = p.matrixTransform(svg.getScreenCTM().inverse()); return [t.x, -t.y]; };
+  let drag = null;
+  svg.onpointerdown = ev => {
+    const g = ev.target.closest("[data-q]");
+    if (A.pal) {
+      const p = pt(ev), r = salaEm(p);
+      if (!r) { msg("clique dentro de uma divisão deste piso", true); return; }
+      if (A.pal === "__QE") { S.P.panel = {room_id: r.id, pos: [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100]}; A.pal = null; render(); marcar(); return; }
+      const q = {id: novoId(), kind: A.pal, room_id: r.id, pos: [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100], height_m: alturaDef(A.pal, r), height_origem: "CONVENCAO", note: ""};
+      S.P.points.push(q); A.sel = q.id; mudou(); return;
+    }
+    if (g) { A.sel = g.dataset.q; drag = {q: S.P.points.find(x => x.id === A.sel), moveu: false}; svg.setPointerCapture(ev.pointerId); tudo(); return; }
+    drag = {pan: true, x: ev.clientX, y: ev.clientY, vb: A.vb.slice()}; svg.setPointerCapture(ev.pointerId);
+  };
+  svg.onpointermove = ev => {
+    if (!drag) return;
+    if (drag.pan) { const f = A.vb[2] / svg.clientWidth; A.vb[0] = drag.vb[0] - (ev.clientX - drag.x) * f; A.vb[1] = drag.vb[1] - (ev.clientY - drag.y) * f; desenhar(); return; }
+    const p = pt(ev); if (salaEm(p)) { drag.q.pos = [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100]; drag.moveu = true; desenhar(); }
+  };
+  svg.onpointerup = () => { if (drag && drag.q && drag.moveu) { mover(drag.q, drag.q.pos); mudou(); } else if (drag && drag.pan && Math.abs(A.vb[0] - drag.vb[0]) < 1e-9 && Math.abs(A.vb[1] - drag.vb[1]) < 1e-9) { A.sel = null; tudo(); } drag = null; };
+  svg.onwheel = ev => { ev.preventDefault(); const p = pt(ev), f = ev.deltaY > 0 ? 1.2 : 1 / 1.2;
+    A.vb = [p[0] - (p[0] - A.vb[0]) * f, -p[1] - (-p[1] - A.vb[1]) * f, A.vb[2] * f, A.vb[3] * f]; desenhar(); };
+  m.querySelectorAll("#apal [data-k]").forEach(b => b.onclick = () => { A.pal = A.pal === b.dataset.k ? null : b.dataset.k; A.sel = null; m.querySelectorAll("#apal [data-k]").forEach(x => x.style.outline = x.dataset.k === A.pal ? "2px solid var(--ac)" : ""); tudo(); });
+  $("#apiso").onchange = e => { A.piso = +e.target.value; A.sel = null; render(); };
+  $("#aalt").onchange = e => { A.alturas = e.target.checked; desenhar(); };
+  $("#afit").onclick = () => { A.vb = limites(); desenhar(); };
+  $("#apre").onclick = async () => { try {
+    const r = await api(`/api/p/${S.slug}/preencher`, {project: S.P, piso: A.piso, so_vazias: !$("#asub").checked});
+    S.P.points = r.points; A.sel = null; msg(`${r.gerados} pontos gerados em ${r.divisoes} divisões (alturas da convenção). Ajuste e guarde a revisão.`); marcar(); tudo(); } catch (e) { msg(e.message, true); } };
+  document.onkeydown = ev => { if (S.tab !== "apar" || ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    if (ev.key === "Delete" && A.sel) apagar(A.sel); if (ev.key === "Escape") { A.pal = null; A.sel = null; render(); } };
+  tudo();
 };
 V.exp = m => {
   m.innerHTML = `<div class=row><button id=r>Relatório HTML (memória de cálculo + material)</button><button id=d1>DXF planta + circuitos</button><button id=d2>DXF unifilar</button><button id=j>Resultado JSON</button></div>

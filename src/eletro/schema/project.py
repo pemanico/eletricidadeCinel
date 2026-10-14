@@ -52,6 +52,18 @@ class Equipment(BaseModel):
     room_id: str
     power_w: float = Field(gt=0)
 
+class Ponto(BaseModel):
+    """Aparelhagem colocada na planta (simbolo do catalogo data/convencoes/simbolos_alturas_v1.json).
+    height_m = altura do EIXO ao pavimento acabado; None = teto (pe-direito da divisao).
+    height_origem: CONVENCAO (preenchida pelo catalogo) ou MANUAL (alterada pelo tecnico)."""
+    id: str
+    kind: str
+    room_id: str
+    pos: Point
+    height_m: Optional[float] = Field(default=None, ge=0, le=6)
+    height_origem: Literal["CONVENCAO", "MANUAL"] = "CONVENCAO"
+    note: str = ""
+
 class Panel(BaseModel):
     room_id: str
     pos: Point
@@ -88,6 +100,7 @@ class Project(BaseModel):
     rooms: list[Room]
     openings: list[Opening] = []
     equipment: list[Equipment] = []
+    points: list[Ponto] = []                   # aparelhagem colocada; se uma divisao tem pontos, o motor usa-os
     panel: Optional[Panel] = None
     revision: int = 0
     revisions: list[Revision] = []
@@ -104,6 +117,11 @@ class Project(BaseModel):
             if o.room_id not in ids: raise ValueError(f"abertura {o.id}: divisao {o.room_id} inexistente")
         for e in self.equipment:
             if e.room_id not in ids: raise ValueError(f"equipamento {e.id}: divisao {e.room_id} inexistente")
+        pids = [q.id for q in self.points]
+        if len(set(pids)) != len(pids):
+            raise ValueError("ids de pontos repetidos")
+        for q in self.points:
+            if q.room_id not in ids: raise ValueError(f"ponto {q.id}: divisao {q.room_id} inexistente")
         if self.panel and self.panel.room_id not in ids:
             raise ValueError("quadro: divisao inexistente")
         return self

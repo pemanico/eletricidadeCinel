@@ -12,6 +12,7 @@ from .rules.circuitos import agrupar_sequencial
 from .rules.potencia import compartimentos, potencia_minima_kva
 from .rules.quadro import potencia_a_contratar, calibre_geral_a, calibre_ddr, pe_mm2, modulos
 from .rules.ited import dotacao_ited
+from .rules import alturas
 
 CUMPRE, NAO_CUMPRE, CONVENCAO, POR_CONFIRMAR, AVISO = "CUMPRE", "NAO_CUMPRE", "CONVENCAO", "POR_CONFIRMAR", "AVISO"
 
@@ -67,7 +68,19 @@ def s_min_de(c, cfg) -> float:
     return cfg["s_min_mm2"].get("iluminacao" if c.tipo == "iluminacao" else "tomadas" if c.tipo == "tomadas"
                                  else "avac" if c.tipo == "climatizacao" else c.tipo, 2.5)
 
-def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None) -> Resultado:
+def contar_pontos(pts, catalogo: dict) -> dict:
+    """Contagens a partir da aparelhagem colocada na planta."""
+    n = {"luz": 0, "tomadas": 0, "interruptores": 0, "rj45": 0, "tv": 0, "dedicado": 0}
+    for q in pts:
+        c = alturas.categoria(q.kind, catalogo)
+        if c == "luz": n["luz"] += 1
+        elif c == "tomada": n["tomadas"] += 1
+        elif c == "interruptor": n["interruptores"] += 1
+        elif c == "dedicado": n["dedicado"] += 1
+        elif c == "ited": n["tv" if q.kind == "tv" else "rj45"] += 1
+    return n
+
+def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None, simbolos: Optional[dict] = None) -> Resultado:
     p, conflitos = resolve(p0)
     v: list[Verificacao] = []
     for c in conflitos:
@@ -80,9 +93,34 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None) -> Resu
     fator, vert = perfil["comprimentos"]["fator_trajeto"], perfil["comprimentos"]["vertical_m"]
     q_max = perfil["queda_max_pct"]
 
-    pontos = {r.id: pontos_divisao(r, perfil) for r in p.rooms}
+    pontos = {r.id: {**pontos_divisao(r, perfil), "origem": "CONVENCAO"} for r in p.rooms}
     v.append(Verificacao(ref=perfil["id"], estado=CONVENCAO,
                          texto="Numero de pontos por divisao e convencao de projeto (RTIEBT nao o fixa)"))
+    # Aparelhagem colocada na planta: substitui a convencao NAS DIVISOES que tem pontos
+    cat = simbolos or (alturas.carregar(str(alturas.CATALOGO_DEFAULT)) if p.points else None)
+    contagens: dict[str, dict] = {}
+    if p.points:
+        por_div: dict[str, list] = {}
+        for q in p.points:
+            por_div.setdefault(q.room_id, []).append(q)
+        nomes = {r.id: r.name for r in p.rooms}
+        for rid, qs in por_div.items():
+            n = contar_pontos(qs, cat); contagens[rid] = n
+            conv = pontos[rid]
+            if n["luz"] + n["tomadas"] + n["interruptores"]:
+                pontos[rid] = {"luz": n["luz"], "tomadas": n["tomadas"], "interruptores": n["interruptores"], "origem": "PLANTA"}
+                falta = [f"{k} {n[k]} < {conv[k]}" for k in ("luz", "tomadas") if n[k] < conv[k]]
+                if falta:
+                    v.append(Verificacao(ref=perfil["id"], estado=CONVENCAO,
+                                         texto=f"{nomes[rid]}: abaixo da convencao ({', '.join(falta)}); decisao do projetista"))
+            if n["dedicado"] and not any(e.room_id == rid for e in p.equipment):
+                v.append(Verificacao(ref="projeto", estado=AVISO,
+                                     texto=f"{nomes[rid]}: {n['dedicado']} ponto(s) dedicado(s) na planta sem equipamento definido (sem circuito nem potencia)"))
+        rooms_id = {r.id: r for r in p.rooms}
+        for ref, est, txt in alturas.verificar(p.points, rooms_id, cat):
+            v.append(Verificacao(ref=ref, estado=est, texto=txt))
+        v.append(Verificacao(ref=cat["id"], estado=CONVENCAO,
+                             texto="Alturas de montagem por defeito sao convencao (o RTIEBT nao fixa alturas gerais em habitacao)"))
     circuitos: list[Circuito] = []
 
     sim, qd = perfil["simultaneidade"], perfil["quadro"]
@@ -219,6 +257,13 @@ def calcular(p0: Project, perfil: dict, ited_cfg: Optional[dict] = None) -> Resu
     if ited_cfg:
         for r in p.rooms:
             ited[r.id] = dotacao_ited(r, ited_cfg)
+            n = contagens.get(r.id)
+            if n and (n["rj45"] or n["tv"]):
+                minimo = (ited[r.id]["rj45"], ited[r.id]["tv"])
+                ited[r.id] = {**ited[r.id], "rj45": n["rj45"], "tv": n["tv"], "origem": "PLANTA"}
+                if n["rj45"] < minimo[0] or n["tv"] < minimo[1]:
+                    v.append(Verificacao(ref="Manual ITED", estado=AVISO,
+                                         texto=f"{r.name}: {n['rj45']} RJ45 / {n['tv']} TV na planta, abaixo da dotacao ({minimo[0]} / {minimo[1]})"))
         tot_rj, tot_tv = sum(x["rj45"] for x in ited.values()), sum(x["tv"] for x in ited.values())
         for uso_, est in sorted({(r.use, ited[r.id]["estado"]) for r in p.rooms}):
             if est != CUMPRE:

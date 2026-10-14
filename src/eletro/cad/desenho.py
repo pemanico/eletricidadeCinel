@@ -45,11 +45,42 @@ def _pontos_luz(poly, n):
     horiz = (x1 - x0) >= (y1 - y0)
     return [((x0 + (i + 1) * (x1 - x0) / (n + 1), cy) if horiz else (cx, y0 + (i + 1) * (y1 - y0) / (n + 1))) for i in range(n)]
 
-def posicoes_pontos(p: Project, res: Resultado) -> dict:
-    """{room_id: {'luz': [...], 'tomadas': [...], 'interruptores': [...], 'rj45': [...], 'tv': [...]}} (indicativo)."""
+CAT_CHAVE = {"luz": "luz", "tomada": "tomadas", "interruptor": "interruptores", "dedicado": "dedicado"}
+
+def simbolo(kind: str, pos, catalogo: dict, layer: str = "ELE-SIMBOLOS", altura: float | None = None) -> list[dict]:
+    """Primitivas do simbolo do catalogo centrado em pos (metros); etiqueta com a altura ao chao."""
+    s = catalogo["simbolos"].get(kind)
+    k = catalogo.get("tamanho_simbolo_m", 0.16)
+    x, y = pos
+    if s is None:
+        return [T((x, y), 0.12, f"?{kind}", layer, "#d62728")]
+    cor, out = s["cor"], []
+    for e in s["desenho"]:
+        if "c" in e: out.append(C((x + e["c"][0] * k, y + e["c"][1] * k), e["c"][2] * k, layer, cor))
+        elif "l" in e: out.append(L((x + e["l"][0] * k, y + e["l"][1] * k), (x + e["l"][2] * k, y + e["l"][3] * k), layer, cor))
+        elif "p" in e: out.append(P([(x + a * k, y + b * k) for a, b in e["p"]], layer, cor, False))
+        elif "t" in e: out.append(T((x + e["t"][0] * k, y + e["t"][1] * k), e["t"][2] * k, e["t"][3], layer, cor))
+    if altura is not None:
+        out.append(T((x + 1.1 * k, y - 1.3 * k), 0.09, f"h{altura:.2f}", "ELE-ALTURAS", "#555555"))
+    return out
+
+def posicoes_pontos(p: Project, res: Resultado, catalogo: dict | None = None) -> dict:
+    """{room_id: {'luz': [...], 'tomadas': [...], 'interruptores': [...], 'rj45': [...], 'tv': [...]}}.
+    Divisoes com aparelhagem colocada na planta: posicoes REAIS (p.points). Restantes: INDICATIVAS (geradas)."""
     out = {}
+    manual: dict[str, list] = {}
+    for q in p.points:
+        manual.setdefault(q.room_id, []).append(q)
     for r in p.rooms:
         if not r.polygon: continue
+        if r.id in manual and catalogo:
+            d = {"luz": [], "tomadas": [], "interruptores": [], "rj45": [], "tv": [], "dedicado": [], "manual": True}
+            for q in manual[r.id]:
+                c = catalogo["simbolos"].get(q.kind, {}).get("categoria")
+                if c == "ited": d["tv" if q.kind == "tv" else "rj45"].append(tuple(q.pos))
+                elif c in CAT_CHAVE: d[CAT_CHAVE[c]].append(tuple(q.pos))
+            out[r.id] = d
+            continue
         pts = res.pontos[r.id]
         tom = _percurso_perimetro(r.polygon, pts["tomadas"], 0.2)
         ited = res.ited.get(r.id, {"rj45": 0, "tv": 0})
@@ -63,11 +94,14 @@ def posicoes_pontos(p: Project, res: Resultado) -> dict:
                      "rj45": ext[:ited["rj45"]], "tv": ext[ited["rj45"]:]}
     return out
 
-def planta(p0: Project, res: Resultado, incluir_divisoes: bool = True) -> list[dict]:
+def planta(p0: Project, res: Resultado, incluir_divisoes: bool = True, catalogo: dict | None = None) -> list[dict]:
     """Planta eletrica: pontos, percursos dos circuitos (cor por tipo), quadro, ITED, legenda."""
     p, _ = resolve(p0)
     prim, rooms = [], {r.id: r for r in p.rooms}
-    pos = posicoes_pontos(p, res)
+    if p.points and catalogo is None:
+        from ..rules.alturas import carregar, CATALOGO_DEFAULT
+        catalogo = carregar(str(CATALOGO_DEFAULT))
+    pos = posicoes_pontos(p, res, catalogo)
     if incluir_divisoes:
         for r in p.rooms:
             if r.polygon:
@@ -97,8 +131,14 @@ def planta(p0: Project, res: Resultado, incluir_divisoes: bool = True) -> list[d
         if qpos and c.divisoes and rooms.get(c.divisoes[0]) and rooms[c.divisoes[0]].polygon:
             ctr0 = _centro(rooms[c.divisoes[0]].polygon)
             prim.append(T((qpos[0] + 0.1, (qpos[1] + ctr0[1]) / 2), 0.11, c.id, "ELE-TEXTO", cor))
-    # simbolos
+    # simbolos: aparelhagem colocada (simbolo do catalogo + altura)
+    for q in p.points:
+        r = rooms.get(q.room_id)
+        h = q.height_m if q.height_m is not None else (r.height_m if r else None)
+        prim += simbolo(q.kind, q.pos, catalogo, altura=h)
+    # simbolos: divisoes sem aparelhagem colocada (posicoes indicativas)
     for rid, d in pos.items():
+        if d.get("manual"): continue
         for q in d["luz"]:
             prim += [C(q, 0.12, "ELE-SIMBOLOS", COR["iluminacao"]), L((q[0] - .09, q[1] - .09), (q[0] + .09, q[1] + .09), "ELE-SIMBOLOS", COR["iluminacao"]), L((q[0] - .09, q[1] + .09), (q[0] + .09, q[1] - .09), "ELE-SIMBOLOS", COR["iluminacao"])]
         for q in d["tomadas"]:
@@ -115,7 +155,7 @@ def planta(p0: Project, res: Resultado, incluir_divisoes: bool = True) -> list[d
     # legenda
     allpts = [pt for r in p.rooms for pt in r.polygon] or [(0, 0)]
     x0, y0 = min(a for a, _ in allpts), min(b for _, b in allpts) - 0.8
-    prim.append(T((x0, y0), 0.16, "LEGENDA (posicoes indicativas; RASCUNHO nao assinado)", "ELE-TEXTO"))
+    prim.append(T((x0, y0), 0.16, "LEGENDA (RASCUNHO nao assinado; " + ("aparelhagem colocada na planta, alturas hX.XX ao eixo" if p.points else "posicoes indicativas") + ")", "ELE-TEXTO"))
     for i, c in enumerate(res.circuitos):
         prim.append(T((x0, y0 - 0.3 * (i + 1)), 0.13, f"{c.id}: {c.pontos} pt, {c.in_a} A {c.curva}, {c.s_mm2} mm2" + (" [ERRO]" if c.erro else ""),
                       "ELE-TEXTO", COR.get(c.tipo, COR["outro"])))

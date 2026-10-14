@@ -25,3 +25,5 @@
 - (2026-10-13) Bugs meus apanhados pelos testes: traçado de contorno Moore errado (só 4 pixeis), Douglas-Peucker num contorno fechado colapsa (início = fim → linha de comprimento 0), amostragem do lado das portas ao longo da parede em vez de através. Sempre testar funções geométricas com formas conhecidas antes do caso real.
 - (2026-10-13) A camada de "vistas" mistura caixilharia com loiças, bancadas e roupeiros: usar só linhas no prolongamento de uma parede (paralelas, dentro da espessura); senão as divisões perdem 10–40% de área.
 - (2026-10-13) O PDF "regravado" (Creator=PDFium) perdeu as camadas; o plot direto do AutoCAD (Creator=AutoCAD LT) mantém-nas. Pedir sempre o plot direto.
+- (2026-10-14) Testar a UI com um servidor arrancado ANTES de mudar o código dá resultados do código antigo (aconteceu: posições "erradas" eram do processo antigo). Reiniciar o servidor de teste depois de cada alteração em Python.
+- (2026-10-14) Playwright considera linhas SVG finas "não visíveis": esperar com wait_for_function (contagem de elementos), não wait_for_selector.

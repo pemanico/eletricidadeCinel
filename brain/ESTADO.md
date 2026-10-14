@@ -1,5 +1,5 @@
 # Estado atual
-_Atualizado: 2026-10-13 (noite, ~23:40; curso começa 19-10-2026)_
+_Atualizado: 2026-10-14 (tarde; curso começa 19-10-2026)_
 
 ## Feito
 - Notas de estudo em 9 blocos cobrindo todas as UC + UFPRA/UFPCT (`study_notes/`). Material de estudo gerado por IA, NÃO normativo.
@@ -35,6 +35,17 @@ README reescrito; `engine.pendencias()` + banner "NÃO UTILIZÁVEL COMO PROJETO"
 - 3.º PDF (projeto de alterações em obra, 23 págs, AutoCAD LT 2023, camadas preservadas). **Pág. 5 = Planta do piso 0 PROPOSTO, 1:100, 03-2024 (LIC.04): o caso de referência.** Tem: `arq_corte` (paredes, 912 segm.), `arq_cotas` (cotas em camada própria → validar escala), nomes das divisões em texto, **quadro de áreas úteis (22 divisões: Hall 1 4.72, …, Sala 47.97, Piscina 28.00 m²)** → validação cruzada, posição do QE e siglas de equipamentos (PF, MO, MLR, MLL). Págs. 15–23 = vermelhos/amarelos; piso -1 só aparece em vermelhos/amarelos (pág. 17).
 - Decisão pendente do Ordep: (a) pedir ao arquiteto o PDF original/DWG; (b) contorno semi-automático com o PDF como fundo + escala 1:50 + snap a vértices de parede + nomes importados; (c) extração automática de divisões (cara: portas abrem os polígonos).
 - **Próximo:** DXF real do arquiteto no separador "DXF do arquiteto" → relatar camadas/unidade/divisões antes de mexer em código. Risco já identificado: acentos em DXF ANSI_1252 (ver [[ARMADILHAS]]). Agentes e orçamento: não nesta fase.
+
+## 2026-10-14: aparelhagem na planta com alturas ao chão — FEITO
+Pedido do Ordep: "só PDF" (DWG fica para depois); colocar na app os símbolos dos componentes elétricos e preencher automaticamente as alturas ao chão.
+- Novo separador **"Aparelhagem (planta)"**: escolher o piso; fundo = paredes do PDF importado; paleta com 15 símbolos (luz teto/parede, interruptor, comutadores, botão, tomadas uso geral/bancada/estanque/dedicada, AC, caixa de ligação, termoacumulador, RJ45, TV) e QE. Clicar no símbolo e depois na planta: a divisão é detetada pela posição e a **altura é preenchida pela convenção** (por tipo e por uso da divisão: ex. tomada 0,30 m, mas 1,10 m em WC e garagem). Arrastar move (se mudar de divisão e a altura for da convenção, recalcula); editar a altura → origem MANUAL (fica a laranja); "Repor altura da convenção"; Del apaga; zoom com a roda; tabela do piso.
+- **"Preencher pela convenção"**: gera a aparelhagem nas divisões vazias do piso (ou substitui, com a caixa marcada) com as contagens da convenção e posições iniciais ao longo das paredes reais (funciona na ala oblíqua), interruptores junto à porta, metade das tomadas da cozinha como bancada, ligações dos equipamentos.
+- O motor passa a usar os pontos colocados (contagens por divisão = origem PLANTA; circuitos refeitos); avisa quando fica abaixo da convenção, ponto dedicado sem equipamento, ITED abaixo da dotação. Verificações de alturas com fonte: **RTIEBT 701.71.2** (iluminação em WC acima do chuveiro: AVISO abaixo de 2,25 m convencionado) e **801.3.5.5** (garagem: aparelhagem > 1 m, POR CONFIRMAR se se aplica a moradia); altura acima do pé-direito.
+- Planta (SVG/DXF) desenha os símbolos do catálogo com a altura (camada ELE-ALTURAS, "h1.10"); material lista a aparelhagem por tipo; revisões mostram pontos (+/~).
+- Ficheiros: `data/convencoes/simbolos_alturas_v1.json`, `rules/alturas.py`, `cad/colocar.py`, `schema/project.py` (Ponto), `engine.py`, `cad/desenho.py`, `calc/material.py`, `web/*`. Importar PDF grava também `base_p<piso>.dxf` (paredes por piso para o editor).
+- Verificado: 74 testes; Chromium com a planta real (preencher 87 pontos em 13 divisões, colocar, editar altura, arrastar, apagar, resultado, material, planta, guardar). NÃO verificado no PC do Ordep.
+- **Limites:** símbolos não rodam com a parede; percursos de cabo continuam em estrela a partir do centro (comprimentos não usam as posições reais); a planta "Planta + circuitos" sobrepõe os pisos; divisões fundidas pelo PDF (sala aberta) recebem pontos como uma só divisão → dividir primeiro.
+- **Próximo:** o Ordep testa no PC (`git pull`, `pip install -r requirements.txt`, `python run_tests.py`, `python run_app.py`) e diz que alturas/símbolos quer diferentes; depois: dividir divisões fundidas na app; comprimentos de cabo a partir das posições reais.
 
 ## 2026-10-13 (noite): PDF do arquiteto na app — FEITO (parte do PDF fechada, a pedido do Ordep)
 - Novo separador **"PDF do arquiteto"**: carregar PDF → lista de páginas (designação, escala, piso, nº de áreas no quadro, camada de paredes sugerida; sugere a planta "proposto" com mais áreas) → escolher página, camada de paredes, camada de caixilhos/aros, escala e piso → **Detetar** (pré-visualização SVG colorida + avisos/erros + tabela área calculada vs quadro) → **Importar** (substitui só as divisões desse piso; `confirmed=False`; paredes passam a fundo da planta e entram na exportação DXF).

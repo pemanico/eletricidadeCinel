@@ -46,6 +46,7 @@ def fazer_handler(sv: Servico):
                 if STATIC.resolve() not in f.parents or not f.is_file(): return self._json({"erro": "nao encontrado"}, 404)
                 return self._send(200, f.read_bytes(), mimetypes.guess_type(f.name)[0] or "application/octet-stream")
             if u.path == "/api/projetos": return self._json(sv.listar())
+            if u.path == "/api/simbolos": return self._json(sv.simbolos())
             m = re.fullmatch(r"/api/p/([^/]+)(?:/(\w+))?", u.path)
             if not m: return self._json({"erro": "nao encontrado"}, 404)
             slug, ac = m.groups()
@@ -53,6 +54,7 @@ def fazer_handler(sv: Servico):
             if ac == "revisoes": return self._json(sv.revisoes(slug))
             if ac == "diff": return self._json(sv.diferencas(slug, int(q["a"][0]), int(q["b"][0])))
             if ac == "revisao": return self._json(sv.restaurar(slug, int(q["n"][0])))
+            if ac == "fundo": return self._json(sv.fundo_piso(slug, int(q.get("piso", ["0"])[0])))
             return self._json({"erro": "nao encontrado"}, 404)
 
         def _post(self):
@@ -67,6 +69,7 @@ def fazer_handler(sv: Servico):
             if ac == "guardar": return self._json(sv.guardar(slug, d["project"], d.get("motivo", ""), d.get("autor", "")))
             if ac == "perfil": sv.guardar_perfil(slug, d["perfil"]); return self._json({"ok": True})
             if ac == "dxf": return self._json(sv.dxf_analisar(slug, self._body()))
+            if ac == "preencher": return self._json(sv.preencher(slug, d["project"], int(d.get("piso", 0)), bool(d.get("so_vazias", True))))
             if ac == "pdf": return self._json(sv.pdf_analisar(slug, self._raw()))
             if ac in ("pdf_detetar", "pdf_importar"):
                 args = (slug, d["pagina"], d.get("camadas_paredes") or [], d.get("camadas_vaos") or [], d["escala"], d.get("piso"))

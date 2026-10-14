@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from ..engine import Resultado
 
-def lista_material(r: Resultado, margem_cabo: float = 0.10) -> list[dict]:
+def lista_material(r: Resultado, margem_cabo: float = 0.10, pontos=(), catalogo: dict | None = None) -> list[dict]:
     it: list[dict] = []
     def add(cat, desc, qtd, un, nota=""):
         it.append({"categoria": cat, "descricao": desc, "qtd": qtd, "un": un, "nota": nota})
@@ -29,11 +29,21 @@ def lista_material(r: Resultado, margem_cabo: float = 0.10) -> list[dict]:
             add("Quadro", f"Disjuntor {cv}{ina} 1P+N", n, "un")
         add("Quadro", f"Quadro/caixa {q.modulos['total_modulos']} modulos ({q.modulos['fileiras']} fileira(s))", 1, "un",
             "inclui 20% de reserva (convencao)")
-    luz = sum(d["luz"] for d in r.pontos.values()); tom = sum(d["tomadas"] for d in r.pontos.values())
-    inter = sum(d["interruptores"] for d in r.pontos.values())
-    if luz: add("Aparelhagem", "Ponto de luz (caixa + casquilho/armadura)", luz, "un")
-    if inter: add("Aparelhagem", "Interruptor", inter, "un")
-    if tom: add("Aparelhagem", "Tomada 2P+T 16 A", tom, "un")
+    conv = {k: d for k, d in r.pontos.items() if d.get("origem") != "PLANTA"}
+    luz = sum(d["luz"] for d in conv.values()); tom = sum(d["tomadas"] for d in conv.values())
+    inter = sum(d["interruptores"] for d in conv.values())
+    nota = "divisoes sem aparelhagem colocada (convencao)" if len(conv) < len(r.pontos) else ""
+    if luz: add("Aparelhagem", "Ponto de luz (caixa + casquilho/armadura)", luz, "un", nota)
+    if inter: add("Aparelhagem", "Interruptor", inter, "un", nota)
+    if tom: add("Aparelhagem", "Tomada 2P+T 16 A", tom, "un", nota)
+    if pontos and catalogo:
+        por = defaultdict(int)
+        for q in pontos:
+            s_ = catalogo["simbolos"].get(q.kind)
+            if s_ and s_["categoria"] != "ited":
+                por[s_["nome"]] += 1
+        for nome in sorted(por):
+            add("Aparelhagem", nome, por[nome], "un", "colocada na planta")
     rj = sum(d["rj45"] for d in r.ited.values()); tv = sum(d["tv"] for d in r.ited.values())
     if rj: add("ITED", "Tomada RJ45", rj, "un", "cabos/ATI/tubagem ITED nao dimensionados")
     if tv: add("ITED", "Tomada TV", tv, "un", "idem")

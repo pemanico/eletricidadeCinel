@@ -29,3 +29,6 @@
 - [ ] (2026-10-13) Piso -1 (cave): só existe em "vermelhos/amarelos" (pág. 17) no PDF de alterações; confirmar com o arquiteto se há planta proposta da cave.
 - [ ] (2026-10-13) IS.2/IS.3/IS.4 ficam abaixo do quadro porque os resguardos de duche/banheira (na camada de paredes ou vistas) partem a divisão. Decidir: juntar sub-regiões sem nome à divisão vizinha com nome, ou deixar o Ordep corrigir à mão.
 - [ ] (2026-10-13) Portas exteriores numa parede grossa são classificadas como "janela" (não há forma de distinguir só pela geometria). Rever na app.
+- [ ] (2026-10-14) Alturas de montagem: os valores do catálogo são convenção (tomada 0,30; interruptor 1,10; bancada 1,10; AC 2,20; termoacumulador 1,80; aplique 2,00/2,25 em WC; RJ45/TV 0,30). Confirmar com o formador (UC de projeto) e com o Manual ITED (alturas das tomadas de telecomunicações).
+- [ ] (2026-10-14) Simbologia: qual é a exigida nas peças desenhadas (norma/entidade)? Os símbolos atuais são próprios.
+- [ ] (2026-10-14) RTIEBT 801.3.5.5 (aparelhagem > 1 m em locais com veículos): aplica-se a garagem de moradia unifamiliar?

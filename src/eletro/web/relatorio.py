@@ -4,6 +4,10 @@ from html import escape as h
 from ..engine import Resultado, pendencias
 from ..schema.project import Project
 from ..calc.material import lista_material
+from ..rules.alturas import carregar as _carregar_cat, CATALOGO_DEFAULT
+
+def _cat():
+    return _carregar_cat(str(CATALOGO_DEFAULT))
 from ..cad.desenho import planta, unifilar, para_svg
 
 COR_ESTADO = {"CUMPRE": "#1a7f37", "NAO_CUMPRE": "#c62828", "CONVENCAO": "#9a6700", "POR_CONFIRMAR": "#6639ba", "AVISO": "#0969da"}
@@ -46,8 +50,8 @@ def relatorio_html(p: Project, r: Resultado) -> str:
              "".join(f"<tr><td class='e' style='color:{COR_ESTADO.get(v.estado,'#000')}'>{h(v.estado)}</td><td>{h(v.ref)}</td><td>{h(v.texto)}</td></tr>" for v in r.verificacoes) + "</tbody></table>")
     if r.ited:
         o.append("<h2>7. ITED</h2>" + _tab(["Divisão", "RJ45", "TV", "Estado", "Fonte"], [(i, d["rj45"], d["tv"], d["estado"], d["fonte"]) for i, d in r.ited.items()]))
-    o.append("<h2>8. Lista de material</h2>" + _tab(["Categoria", "Descrição", "Qtd", "Un", "Nota"], [(m["categoria"], m["descricao"], m["qtd"], m["un"], m["nota"]) for m in lista_material(r)]) +
+    o.append("<h2>8. Lista de material</h2>" + _tab(["Categoria", "Descrição", "Qtd", "Un", "Nota"], [(m["categoria"], m["descricao"], m["qtd"], m["un"], m["nota"]) for m in lista_material(r, pontos=p.points, catalogo=_cat())]) +
              "<p>Sem preços. Tubagem, caixas, ATI e bornes não dimensionados.</p>")
-    o.append("<h2>9. Planta com circuitos (posições indicativas)</h2>" + para_svg(planta(p, r)))
+    o.append("<h2>9. Planta com circuitos (" + ("aparelhagem colocada; percursos indicativos" if p.points else "posições indicativas") + ")</h2>" + para_svg(planta(p, r)))
     o.append("<h2>10. Esquema unifilar</h2>" + para_svg(unifilar(r), esp=1.5))
     return "".join(o) + "</body></html>"

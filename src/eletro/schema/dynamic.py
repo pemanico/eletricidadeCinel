@@ -41,7 +41,7 @@ def diff(a: Project, b: Project) -> list[str]:
     out: list[str] = []
     def by_id(items): return {i.id: i for i in items}
     for label, la, lb in (("divisao", a.rooms, b.rooms), ("abertura", a.openings, b.openings),
-                          ("equipamento", a.equipment, b.equipment)):
+                          ("equipamento", a.equipment, b.equipment), ("ponto", a.points, b.points)):
         da, db = by_id(la), by_id(lb)
         for k in db.keys() - da.keys(): out.append(f"+ {label} {k}")
         for k in da.keys() - db.keys(): out.append(f"- {label} {k}")
