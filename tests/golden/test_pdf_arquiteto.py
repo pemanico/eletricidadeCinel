@@ -167,3 +167,16 @@ def test_pdf_planta_real_lida_a_1_50_sugere_1_100():
     pal = [{**w, "pos": h(w["pos"])} for w in fx["palavras"]]
     r = divisoes.detetar(t(fx["segmentos"]), pal, fx["quadro_areas"], 0, 50, aux=t(fx["aux"]))
     assert not r["escala"]["validada"] and r["escala"]["escala_sugerida"] == 100, r["escala"]
+
+def test_divisao_fundida_fica_com_o_uso_mais_exigente():
+    """Teste manual 14-10, passo 4: Hall 1+Sala+Cozinha+Despensa+Hall 2+Hall 3 ficava 'hall' (1.o nome) ->
+    ~1 tomada em ~70 m2. Agora fica com o uso mais exigente (erra por excesso) e o erro diz qual e porque."""
+    assert divisoes.uso_fundida(["Hall 1", "Sala de estar/jantar", "Cozinha", "Despensa"]) == "cozinha"
+    assert divisoes.uso_fundida(["Quarto 3", "Closet"]) == "quarto"
+    assert divisoes.uso_fundida(["Hall 2"]) == "hall"
+    fx = json.loads(FIX.read_text(encoding="utf-8"))
+    t = lambda ss: [tuple(map(tuple, s)) for s in ss]
+    r = divisoes.detetar(t(fx["segmentos"]), fx["palavras"], fx["quadro_areas"], 0, 100, aux=t(fx["aux"]))
+    grande = next(d for d in r["divisoes"] if "Cozinha" in d["name"])
+    assert grande["use"] == "cozinha", grande["use"]
+    assert any("Uso atribuido: 'cozinha'" in a["msg"] for a in r["avisos"])

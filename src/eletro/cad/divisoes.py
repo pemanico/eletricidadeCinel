@@ -17,6 +17,15 @@ from .dxfread import uso_por_nome
 
 RES = 0.02          # m por pixel
 TOL_OK, TOL_AVISO = 0.03, 0.08   # diferenca relativa de area: <=3% ok, <=8% aviso, >8% erro
+# Divisoes fundidas: usar o uso mais exigente (mais tomadas/circuitos), para errar por excesso e nunca por defeito.
+# Ordem pela densidade de tomadas da convencao de projeto v1 (data/convencoes/convencao_projeto_v1.json; e
+# CONVENCAO do projeto, nao regra do RTIEBT). Teste manual 14-10: Hall 1+Sala+Cozinha+... ficava "hall" (1 tomada/100 m2).
+USO_PRIORIDADE = ["cozinha", "sala", "escritorio", "lavandaria", "quarto", "outro", "garagem", "wc", "hall", "corredor", "arrumos", "varanda"]
+
+def uso_fundida(nomes: list[str]) -> str:
+    usos = [uso_por_nome(nm) for nm in nomes]
+    return min(usos, key=lambda u: USO_PRIORIDADE.index(u) if u in USO_PRIORIDADE else len(USO_PRIORIDADE))
+
 ESCALAS_NORMAIS = (20, 25, 50, 75, 100, 125, 150, 200, 250, 500, 1000)   # escalas usuais de desenho de arquitetura
 
 def sugerir_escala(razoes: list[float], escala: float) -> float:
@@ -402,13 +411,16 @@ def detetar(segs, palavras, quadro: dict[str, float] | None = None, piso: int = 
             poly = _desviar(poly, RES / 2)      # o contorno passa pelo centro dos pixeis da orla: +meio pixel
         if len(poly) < 3:
             continue
+        uso = uso_fundida(nomes)
         if len(nomes) > 1:
             soma = sum((quadro or {}).get(nm) or 0 for nm in nomes)
             extra = f"; soma no quadro {soma:.2f} m2 ({(area - soma) / soma * 100:+.1f}%)" if soma else ""
-            A("erro", f"{' + '.join(nomes)} ficaram na mesma divisao ({area:.2f} m2{extra}): espaco aberto ou porta nao detetada, dividir a mao")
+            usos = sorted({uso_por_nome(nm) for nm in nomes}, key=USO_PRIORIDADE.index)
+            A("erro", f"{' + '.join(nomes)} ficaram na mesma divisao ({area:.2f} m2{extra}): espaco aberto ou porta nao detetada, dividir a mao. "
+                      f"Uso atribuido: '{uso}' (o mais exigente de {', '.join(usos)}: erra por excesso ate a divisao ser dividida)")
         i += 1
         nome = nomes[0] if len(nomes) == 1 else " + ".join(nomes)
-        divisoes.append({"id": f"{piso_id}r{i}", "name": nome, "use": uso_por_nome(nomes[0]), "floor": piso,
+        divisoes.append({"id": f"{piso_id}r{i}", "name": nome, "use": uso, "floor": piso,
                          "polygon": [[round(x, 3), round(y, 3)] for x, y in poly], "source": "pdf", "confirmed": False})
         div_de[reg] = divisoes[-1]
         for nm in nomes:
